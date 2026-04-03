@@ -27,14 +27,14 @@ app.use(express.static(distPath, {
 
 // Handle React Router - serve index.html for all routes
 // This ensures client-side routing works correctly
-app.get('*', (req, res) => {
+app.use((req, res) => {
   const indexPath = join(distPath, 'index.html');
-  
+
   if (!existsSync(indexPath)) {
     res.status(404).send('index.html not found. Please build the application first.');
     return;
   }
-  
+
   res.sendFile(indexPath);
 });
 
