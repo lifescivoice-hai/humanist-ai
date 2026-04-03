@@ -386,16 +386,25 @@ export const fetchCategoryPageData = async (
 export const fetchMenuItems = async (
   location: "header" | "footer" | "both" = "header"
 ): Promise<TransformedMenuItem[]> => {
+  // Strapi 5: avoid fragile $in[index] filters — fetch active items and filter by location here.
   const qs =
     `filters[isActive][$eq]=true&` +
-    `filters[location][$in][0]=${location}&filters[location][$in][1]=both&` +
-    `sort=order:asc`;
+    `sort=order:asc&` +
+    `pagination[pageSize]=100&` +
+    `status=published`;
 
   const response = await fetch(`${API_URL}/menu-items?${qs}`);
   if (!response.ok) {
-    throw new Error(`Failed to fetch menu items: ${response.statusText}`);
+    const detail = await response.text().catch(() => '');
+    throw new Error(
+      `Failed to fetch menu items: ${response.status} ${response.statusText}${detail ? ` — ${detail.slice(0, 200)}` : ''}`
+    );
   }
 
   const data: StrapiResponse<StrapiMenuItem[]> = await response.json();
-  return (data.data || []).map(transformMenuItem);
+  const rows = (data.data || []).map(transformMenuItem);
+  return rows.filter((item) => {
+    if (location === "both") return item.location === "both";
+    return item.location === location || item.location === "both";
+  });
 };

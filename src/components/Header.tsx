@@ -17,9 +17,10 @@ const Header = () => {
     { label: "Events", href: "/events" },
     { label: "About", href: "/about" },
   ];
-  const { data: menuItems = [], isLoading: isMenuLoading, isError: isMenuError } = useMenuItems("header");
+  const { data: menuItems = [], isLoading: isMenuLoading } = useMenuItems("header");
   const navItems = menuItems.map((item) => ({ label: item.label, href: item.path }));
-  const displayNavItems = isMenuError ? fallbackNavItems : navItems;
+  // Prefer API items; on error or empty, keep fallback so nav is never blank (no long hidden-nav flash).
+  const displayNavItems = navItems.length > 0 ? navItems : fallbackNavItems;
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
@@ -30,17 +31,19 @@ const Header = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
-            {!isMenuLoading &&
-              displayNavItems.map((item) => (
+          <nav
+            className={`hidden md:flex items-center gap-8 ${isMenuLoading && navItems.length === 0 ? "opacity-70" : ""}`}
+            aria-busy={isMenuLoading && navItems.length === 0}
+          >
+            {displayNavItems.map((item) => (
               <Link
-                key={item.href}
+                key={`${item.label}-${item.href}`}
                 to={item.href}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {item.label}
               </Link>
-              ))}
+            ))}
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
@@ -67,17 +70,16 @@ const Header = () => {
         {isMenuOpen && (
           <nav className="md:hidden py-4 border-t border-border animate-fade-in">
             <div className="flex flex-col gap-4">
-              {!isMenuLoading &&
-                displayNavItems.map((item) => (
+              {displayNavItems.map((item) => (
                 <Link
-                  key={item.href}
+                  key={`${item.label}-${item.href}`}
                   to={item.href}
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.label}
                 </Link>
-                ))}
+              ))}
               <Button 
                 variant="accent" 
                 size="sm" 
