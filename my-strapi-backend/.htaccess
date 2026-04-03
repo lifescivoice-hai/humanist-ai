@@ -1,0 +1,2 @@
+# Required by cPanel Node.js Application Manager: the panel writes env vars here.
+# Do not delete this file if you manage environment variables through cPanel.
