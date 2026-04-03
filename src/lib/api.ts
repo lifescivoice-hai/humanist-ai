@@ -1,5 +1,5 @@
-// Strapi API base URL
-const STRAPI_URL = import.meta.env.VITE_STRAPI_URL || 'http://localhost:1337';
+// Strapi API base URL (set VITE_STRAPI_URL in .env — see .env.example)
+const STRAPI_URL = import.meta.env.VITE_STRAPI_URL || 'https://api.thehumanistai.com';
 
 export const API_URL = `${STRAPI_URL}/api`;
 

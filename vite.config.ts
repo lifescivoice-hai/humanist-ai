@@ -11,12 +11,12 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
-    // Proxy API requests to Strapi backend
+    // Optional: only if requests go to /api on dev server (app uses VITE_STRAPI_URL for absolute URLs)
     proxy: {
       '/api': {
-        target: 'http://localhost:1337',
+        target: 'https://api.thehumanistai.com',
         changeOrigin: true,
-        secure: false,
+        secure: true,
       },
     },
   },
