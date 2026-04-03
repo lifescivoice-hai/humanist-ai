@@ -4,8 +4,12 @@ import type { Core } from '@strapi/strapi';
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Database => {
   const client = env('DATABASE_CLIENT', 'sqlite');
 
-  /** Ignore junk DATABASE_URL from the OS (e.g. `base`) — dotenv does not override existing env vars. */
-  const databaseUrl = env('DATABASE_URL');
+  /**
+   * STRAPI_DATABASE_URL wins over DATABASE_URL so local dev can use an External URL in `.env` even when
+   * Windows (or CI) already set DATABASE_URL to Render’s Internal URL — dotenv does not override existing keys.
+   * On Render, set only DATABASE_URL (Internal); leave STRAPI_DATABASE_URL unset.
+   */
+  const databaseUrl = env('STRAPI_DATABASE_URL') || env('DATABASE_URL');
   const usePostgresUrl =
     typeof databaseUrl === 'string' && /^postgres(ql)?:\/\//i.test(databaseUrl.trim());
 
