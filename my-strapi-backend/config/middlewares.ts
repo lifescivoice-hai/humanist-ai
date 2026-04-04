@@ -1,5 +1,7 @@
 import type { Core } from '@strapi/strapi';
 
+import { UPLOAD_MAX_BYTES } from './plugins';
+
 export default ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewares => {
   const corsEnv = env('CORS_ORIGIN');
   const corsOrigins = corsEnv
@@ -52,7 +54,14 @@ export default ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
     },
     'strapi::poweredBy',
     'strapi::query',
-    'strapi::body',
+    {
+      name: 'strapi::body',
+      config: {
+        formidable: {
+          maxFileSize: UPLOAD_MAX_BYTES,
+        },
+      },
+    },
     'strapi::session',
     // Tab icon for /admin — served at /favicon.ico (file: public/favicon.ico).
     {
