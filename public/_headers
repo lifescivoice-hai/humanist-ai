@@ -1,0 +1,4 @@
+# Netlify / Cloudflare Pages: correct MIME for extensionless health file
+/site/health
+  Content-Type: application/json; charset=utf-8
+  Cache-Control: public, max-age=60
