@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 const HEALTH_JSON = JSON.stringify({ message: "healthy" });
 
-/** GET /health → same JSON as Strapi (avoids /api proxy). */
+/** GET /site/health → production: https://thehumanistai.com/site/health */
 function frontendHealthRoute(): Plugin {
   const serve = (
     req: { method?: string; url?: string },
@@ -13,7 +13,7 @@ function frontendHealthRoute(): Plugin {
   ) => {
     if (req.method !== "GET") return false;
     const pathname = req.url?.split("?")[0];
-    if (pathname !== "/health") return false;
+    if (pathname !== "/site/health") return false;
     res.setHeader("Content-Type", "application/json");
     res.end(HEALTH_JSON);
     return true;
