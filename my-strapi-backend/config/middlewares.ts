@@ -54,7 +54,13 @@ export default ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
     'strapi::query',
     'strapi::body',
     'strapi::session',
-    'strapi::favicon',
+    // Tab icon for /admin — served at /favicon.ico (file: public/favicon.ico).
+    {
+      name: 'strapi::favicon',
+      config: {
+        path: 'public/favicon.ico',
+      },
+    },
     'strapi::public',
   ];
 };
