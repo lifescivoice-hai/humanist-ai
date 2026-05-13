@@ -2,6 +2,7 @@ import path from 'path';
 import type { Core } from '@strapi/types';
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Database => {
+  /** Only `connections[DATABASE_CLIENT]` is merged into the exported config (`mysql`, `postgres`, or `sqlite`). */
   const client = env('DATABASE_CLIENT', 'sqlite');
 
   /**
