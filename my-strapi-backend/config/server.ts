@@ -1,4 +1,4 @@
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/types';
 
 /** Render sets PORT; an empty PORT in the dashboard can override it and make env.int → NaN. */
 function resolvePort(env: Core.Config.Shared.ConfigParams['env']): number {

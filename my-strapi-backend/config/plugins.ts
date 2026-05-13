@@ -1,5 +1,5 @@
 import path from 'path';
-import type { Core } from '@strapi/strapi';
+import type { Core } from '@strapi/types';
 
 /**
  * Upload: disk under `public/uploads/YYYY/MM/DD/` via custom provider
