@@ -4,7 +4,7 @@ import blog1 from "@/assets/blog-1.jpg";
 import blog2 from "@/assets/blog-2.jpg";
 import blog3 from "@/assets/blog-3.jpg";
 import { Badge } from "@/components/ui/badge";
-import { useLatestArticles, useCategories } from "@/hooks/useArticles";
+import { useHomepage, useLatestArticles, useCategories } from "@/hooks/useArticles";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const FALLBACK_IMAGES = [heroBg, blog1, blog2, blog3];
@@ -13,7 +13,17 @@ const pickImage = (url: string | null, index: number) =>
   url || FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
 
 const HeroSection = () => {
-  const { data: articles = [], isLoading, isError } = useLatestArticles(7);
+  // Curated picks from the homepage single type; fall back to latest if empty.
+  const { data: homepage, isLoading: homepageLoading, isError: homepageError } = useHomepage();
+  const curated = homepage?.heroArticles ?? [];
+  const fallbackEnabled = !homepageLoading && !homepageError && curated.length === 0;
+  const { data: latest = [], isLoading: latestLoading, isError: latestError } = useLatestArticles(
+    fallbackEnabled ? 7 : 0
+  );
+  const articles = curated.length > 0 ? curated : latest;
+  const isLoading = homepageLoading || (fallbackEnabled && latestLoading);
+  const isError = homepageError && latestError;
+
   const { data: categories = [] } = useCategories(12);
 
   const [featured, ...rest] = articles.slice(0, 7);

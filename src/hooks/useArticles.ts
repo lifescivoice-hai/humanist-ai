@@ -7,6 +7,7 @@ import {
   fetchArticles,
   fetchCategories,
   fetchCategoryPageData,
+  fetchHomepage,
   fetchMenuItems,
   searchArticles,
 } from '@/services/strapi';
@@ -93,6 +94,18 @@ export const useSearchArticles = (query: string, delayMs: number = 300, limit: n
   });
 
   return { ...queryResult, debouncedQuery: trimmed };
+};
+
+/**
+ * Curated homepage selections from the Strapi `homepage` single type.
+ * Returns ordered lists for each section (hero, featured, weekly top, weekly titles).
+ */
+export const useHomepage = () => {
+  return useQuery({
+    queryKey: ['homepage'],
+    queryFn: fetchHomepage,
+    staleTime: 2 * 60 * 1000,
+  });
 };
 
 export const useMenuItems = (location: 'header' | 'footer' | 'both' = 'header') => {

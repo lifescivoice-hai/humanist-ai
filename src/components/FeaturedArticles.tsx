@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Clock, User, ArrowRight, Newspaper } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useLatestArticles } from "@/hooks/useArticles";
+import { useHomepage, useLatestArticles } from "@/hooks/useArticles";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ArticleCardProps {
@@ -132,7 +132,16 @@ const ArticleCard = ({
 };
 
 const FeaturedArticles = () => {
-  const { data: items = [], isLoading } = useLatestArticles(5);
+  // Use the admin's curated picks from the Homepage single type;
+  // if none are selected, fall back to the latest articles.
+  const { data: homepage, isLoading: homepageLoading } = useHomepage();
+  const curated = homepage?.featuredArticles ?? [];
+  const fallbackEnabled = !homepageLoading && curated.length === 0;
+  const { data: latest = [], isLoading: latestLoading } = useLatestArticles(
+    fallbackEnabled ? 5 : 0
+  );
+  const items = curated.length > 0 ? curated : latest;
+  const isLoading = homepageLoading || (fallbackEnabled && latestLoading);
 
   const articles = items.slice(0, 5).map((a, i) => ({
     slug: a.slug,

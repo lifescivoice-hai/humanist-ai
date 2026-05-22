@@ -436,6 +436,77 @@ export const fetchCategoryPageData = async (
   };
 };
 
+/**
+ * Curated homepage picks from the `homepage` single type.
+ * Each property is an ordered list of articles as selected in the Strapi admin.
+ * Empty arrays mean nothing was selected — frontend should fall back to latest.
+ */
+export interface HomepageData {
+  heroArticles: ReturnType<typeof transformArticle>[];
+  featuredArticles: ReturnType<typeof transformArticle>[];
+  weeklyTopArticles: ReturnType<typeof transformArticle>[];
+  weeklyTopTitles: ReturnType<typeof transformArticle>[];
+}
+
+interface HomepageResponseAttributes {
+  heroArticles?: Article[] | { data?: Article[] };
+  featured_articles?: Article[] | { data?: Article[] };
+  weekly_top_articles?: Article[] | { data?: Article[] };
+  weekly_top_titles?: Article[] | { data?: Article[] };
+}
+
+interface HomepageResponse {
+  id?: number;
+  documentId?: string;
+  attributes?: HomepageResponseAttributes;
+  // Strapi v5 flattens attributes onto the root object
+  heroArticles?: HomepageResponseAttributes['heroArticles'];
+  featured_articles?: HomepageResponseAttributes['featured_articles'];
+  weekly_top_articles?: HomepageResponseAttributes['weekly_top_articles'];
+  weekly_top_titles?: HomepageResponseAttributes['weekly_top_titles'];
+}
+
+const normalizeArticleList = (raw: HomepageResponseAttributes['heroArticles']): Article[] => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'object' && 'data' in raw && Array.isArray(raw.data)) {
+    return raw.data as Article[];
+  }
+  return [];
+};
+
+export const fetchHomepage = async (): Promise<HomepageData> => {
+  // Deep-populate each article relation so we get featuredImage + categories too.
+  const populate = [
+    'populate[heroArticles][populate][featuredImage]=true',
+    'populate[heroArticles][populate][categories]=true',
+    'populate[featured_articles][populate][featuredImage]=true',
+    'populate[featured_articles][populate][categories]=true',
+    'populate[weekly_top_articles][populate][featuredImage]=true',
+    'populate[weekly_top_articles][populate][categories]=true',
+    'populate[weekly_top_titles][populate][featuredImage]=true',
+    'populate[weekly_top_titles][populate][categories]=true',
+  ].join('&');
+
+  const response = await fetch(`${API_URL}/homepage?${populate}`);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch homepage: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const json: StrapiResponse<HomepageResponse> = await response.json();
+  const root = json.data || {};
+  const attrs: HomepageResponseAttributes = root.attributes || root;
+
+  return {
+    heroArticles: normalizeArticleList(attrs.heroArticles).map(transformArticle),
+    featuredArticles: normalizeArticleList(attrs.featured_articles).map(transformArticle),
+    weeklyTopArticles: normalizeArticleList(attrs.weekly_top_articles).map(transformArticle),
+    weeklyTopTitles: normalizeArticleList(attrs.weekly_top_titles).map(transformArticle),
+  };
+};
+
 export const fetchMenuItems = async (
   location: "header" | "footer" | "both" = "header"
 ): Promise<TransformedMenuItem[]> => {

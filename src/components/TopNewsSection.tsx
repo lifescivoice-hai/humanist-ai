@@ -1,13 +1,24 @@
 import { TrendingUp, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useLatestArticles } from "@/hooks/useArticles";
+import { useHomepage, useLatestArticles } from "@/hooks/useArticles";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const TopNewsSection = () => {
-  const { data: latestArticles = [], isLoading } = useLatestArticles(5);
-  const weeklyTopTitles = latestArticles.slice(0, 5);
-  const weeklyTop = latestArticles.slice(0, 3);
+  // Curated picks from the Homepage single type; if either field is empty,
+  // fall back to the most recent articles so the section never goes blank.
+  const { data: homepage, isLoading: homepageLoading } = useHomepage();
+  const curatedTop = homepage?.weeklyTopArticles ?? [];
+  const curatedTitles = homepage?.weeklyTopTitles ?? [];
+  const needsFallback =
+    !homepageLoading && (curatedTop.length === 0 || curatedTitles.length === 0);
+  const { data: latestArticles = [], isLoading: latestLoading } = useLatestArticles(
+    needsFallback ? 5 : 0
+  );
+  const isLoading = homepageLoading || (needsFallback && latestLoading);
+
+  const weeklyTop = (curatedTop.length > 0 ? curatedTop : latestArticles).slice(0, 3);
+  const weeklyTopTitles = (curatedTitles.length > 0 ? curatedTitles : latestArticles).slice(0, 5);
 
   return (
     <section className="py-16 bg-navy">
