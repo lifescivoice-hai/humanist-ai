@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   fetchArticleById,
@@ -7,6 +8,7 @@ import {
   fetchCategories,
   fetchCategoryPageData,
   fetchMenuItems,
+  searchArticles,
 } from '@/services/strapi';
 
 // Hook to fetch single article by ID
@@ -66,6 +68,31 @@ export const useCategoryPage = (
     enabled: !!slug,
     staleTime: 2 * 60 * 1000,
   });
+};
+
+/**
+ * Debounced article search. `query` is delayed by `delayMs` before triggering
+ * the network call, so we don't fire a request on every keystroke.
+ * Returns `{ data, isLoading, isError, error, debouncedQuery }`.
+ */
+export const useSearchArticles = (query: string, delayMs: number = 300, limit: number = 20) => {
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedQuery(query), delayMs);
+    return () => clearTimeout(id);
+  }, [query, delayMs]);
+
+  const trimmed = debouncedQuery.trim();
+
+  const queryResult = useQuery({
+    queryKey: ['articles', 'search', trimmed, limit],
+    queryFn: () => searchArticles(trimmed, limit),
+    enabled: trimmed.length >= 2,
+    staleTime: 60 * 1000,
+  });
+
+  return { ...queryResult, debouncedQuery: trimmed };
 };
 
 export const useMenuItems = (location: 'header' | 'footer' | 'both' = 'header') => {

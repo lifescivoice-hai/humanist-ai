@@ -328,6 +328,35 @@ export const fetchLatestArticles = async (limit: number = 5): Promise<ReturnType
   return (data.data || []).map(transformArticle);
 };
 
+/**
+ * Full-text-ish search over article title, excerpt and author.
+ * Uses Strapi's case-insensitive `$containsi` operator with `$or`.
+ * `content` is omitted because it's stored as rich-text blocks (JSON) and
+ * Strapi cannot run `$containsi` against block content reliably.
+ */
+export const searchArticles = async (
+  query: string,
+  limit: number = 20
+): Promise<ReturnType<typeof transformArticle>[]> => {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  const q = encodeURIComponent(trimmed);
+  const filtersQs =
+    `filters[$or][0][title][$containsi]=${q}` +
+    `&filters[$or][1][excerpt][$containsi]=${q}` +
+    `&filters[$or][2][author][$containsi]=${q}`;
+
+  const response = await fetch(
+    `${API_URL}/articles?${filtersQs}&${ARTICLE_SORT_QS}&pagination[limit]=${limit}&${ARTICLE_POPULATE_QS}`
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to search articles: ${response.statusText}`);
+  }
+  const data: StrapiResponse<Article[]> = await response.json();
+  return (data.data || []).map(transformArticle);
+};
+
 // Fetch all articles (for listing pages)
 export const fetchArticles = async (page: number = 1, pageSize: number = 10) => {
   // Strapi v5 populate syntax: use populate=featuredImage

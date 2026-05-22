@@ -1,14 +1,28 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Menu, X, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import NewsletterSubscription from "@/components/NewsletterSubscription";
+import SearchDialog from "@/components/SearchDialog";
 import { useMenuItems } from "@/hooks/useArticles";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Keyboard shortcut: Ctrl/Cmd + K opens the search dialog.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const fallbackNavItems = [
     { label: "Blogs", href: "/blogs" },
@@ -60,9 +74,17 @@ const Header = () => {
             )}
           </nav>
 
-          <div className="hidden md:flex items-center gap-4">
-            <Button 
-              variant="accent" 
+          <div className="hidden md:flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              aria-label="Search articles"
+              className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <Search className="h-5 w-5" />
+            </button>
+            <Button
+              variant="accent"
               size="sm"
               onClick={() => setIsSubscriptionOpen(true)}
             >
@@ -70,14 +92,24 @@ const Header = () => {
             </Button>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          {/* Mobile actions */}
+          <div className="flex md:hidden items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              aria-label="Search articles"
+              className="p-2 text-muted-foreground hover:text-foreground"
+            >
+              <Search className="h-5 w-5" />
+            </button>
+            <button
+              className="p-2"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
@@ -126,6 +158,8 @@ const Header = () => {
         open={isSubscriptionOpen} 
         onOpenChange={setIsSubscriptionOpen} 
       />
+
+      <SearchDialog open={isSearchOpen} onOpenChange={setIsSearchOpen} />
     </header>
   );
 };
