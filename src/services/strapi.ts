@@ -198,8 +198,25 @@ const convertRichTextNode = (node: RichTextNode): string => {
   }
   
   // Heading
-  if (node.type?.startsWith('heading') && node.children) {
-    const level = node.type.replace('heading', '') || '1';
+  // Strapi v5 blocks: { type: 'heading', level: 1-6, children: [...] }
+  // Legacy/Slate format: { type: 'heading-one' | 'heading-two' | ... }
+  if (node.type === 'heading' && node.children) {
+    const rawLevel = typeof node.level === 'number' ? node.level : Number(node.level);
+    const level = Number.isFinite(rawLevel) && rawLevel >= 1 && rawLevel <= 6 ? rawLevel : 2;
+    const content = node.children.map(convertRichTextNode).join('');
+    return `<h${level}>${content}</h${level}>`;
+  }
+
+  if (node.type?.startsWith('heading-') && node.children) {
+    const map: Record<string, number> = {
+      'heading-one': 1,
+      'heading-two': 2,
+      'heading-three': 3,
+      'heading-four': 4,
+      'heading-five': 5,
+      'heading-six': 6,
+    };
+    const level = map[node.type] ?? 2;
     const content = node.children.map(convertRichTextNode).join('');
     return `<h${level}>${content}</h${level}>`;
   }
