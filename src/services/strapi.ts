@@ -77,6 +77,13 @@ interface Article {
 const ARTICLE_POPULATE_QS =
   'populate[featuredImage]=true&populate[categories]=true';
 
+/**
+ * Sort by the editorial `published` date set in the admin (a manual `date` field
+ * that does NOT change on re-publish), then fall back to `publishedAt` for any
+ * entries where `published` is empty.
+ */
+const ARTICLE_SORT_QS = 'sort[0]=published:desc&sort[1]=publishedAt:desc';
+
 const normalizeCategoryList = (raw: ArticleAttributes['categories']): StrapiCategory[] => {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw;
@@ -312,7 +319,7 @@ export const fetchArticleBySlug = async (slug: string): Promise<ReturnType<typeo
 export const fetchLatestArticles = async (limit: number = 5): Promise<ReturnType<typeof transformArticle>[]> => {
   // Strapi v5 populate syntax: use populate=featuredImage
   const response = await fetch(
-    `${API_URL}/articles?sort=publishedAt:desc&pagination[limit]=${limit}&${ARTICLE_POPULATE_QS}`
+    `${API_URL}/articles?${ARTICLE_SORT_QS}&pagination[limit]=${limit}&${ARTICLE_POPULATE_QS}`
   );
   if (!response.ok) {
     throw new Error(`Failed to fetch articles: ${response.statusText}`);
@@ -325,7 +332,7 @@ export const fetchLatestArticles = async (limit: number = 5): Promise<ReturnType
 export const fetchArticles = async (page: number = 1, pageSize: number = 10) => {
   // Strapi v5 populate syntax: use populate=featuredImage
   const response = await fetch(
-    `${API_URL}/articles?sort=publishedAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&${ARTICLE_POPULATE_QS}`
+    `${API_URL}/articles?${ARTICLE_SORT_QS}&pagination[page]=${page}&pagination[pageSize]=${pageSize}&${ARTICLE_POPULATE_QS}`
   );
   if (!response.ok) {
     throw new Error(`Failed to fetch articles: ${response.statusText}`);
@@ -387,7 +394,7 @@ export const fetchCategoryPageData = async (
     return { category, articles: [], pagination: undefined };
   }
 
-  const artUrl = `${API_URL}/articles?filters[categories][id][$eq]=${catId}&sort=publishedAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&${ARTICLE_POPULATE_QS}`;
+  const artUrl = `${API_URL}/articles?filters[categories][id][$eq]=${catId}&${ARTICLE_SORT_QS}&pagination[page]=${page}&pagination[pageSize]=${pageSize}&${ARTICLE_POPULATE_QS}`;
   const artRes = await fetch(artUrl);
   if (!artRes.ok) {
     throw new Error(`Failed to fetch articles: ${artRes.statusText}`);
