@@ -6,7 +6,13 @@ export default ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
   const corsEnv = env('CORS_ORIGIN');
   const corsOrigins = corsEnv
     ? corsEnv.split(',').map((o) => o.trim())
-    : ['http://localhost:8080', 'http://localhost:1337', 'http://127.0.0.1:8080'];
+    : [
+        'http://localhost:8080',
+        'http://localhost:8081',
+        'http://localhost:1337',
+        'http://127.0.0.1:8080',
+        'http://127.0.0.1:8081',
+      ];
 
   let r2Origin = '';
   try {
