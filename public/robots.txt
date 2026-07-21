@@ -12,5 +12,9 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /hello
+Disallow: /admin
+Disallow: /api
 
+# Public site only — do not submit api.thehumanistai.com (Strapi admin/API)
 Sitemap: https://thehumanistai.com/sitemap.xml
