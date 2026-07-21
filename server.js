@@ -2,6 +2,7 @@ import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync } from 'fs';
+import { buildSitemapXml } from './scripts/sitemap.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,6 +19,31 @@ if (!existsSync(distPath)) {
   console.error('Please run "npm run build" first to create the production build.');
   process.exit(1);
 }
+
+// Live sitemap from Strapi (articles + categories). Falls back to static file if fetch fails.
+app.get('/sitemap.xml', async (_req, res) => {
+  try {
+    const xml = await buildSitemapXml({
+      siteUrl: process.env.SITE_URL || 'https://thehumanistai.com',
+      strapiUrl:
+        process.env.STRAPI_URL ||
+        process.env.VITE_STRAPI_URL ||
+        'https://api.thehumanistai.com',
+    });
+    res
+      .type('application/xml')
+      .set('Cache-Control', 'public, max-age=3600')
+      .send(xml);
+  } catch (err) {
+    console.error('Sitemap generation failed:', err);
+    const fallback = join(distPath, 'sitemap.xml');
+    if (existsSync(fallback)) {
+      res.type('application/xml').sendFile(fallback);
+      return;
+    }
+    res.status(500).type('text/plain').send('Sitemap unavailable');
+  }
+});
 
 // Serve static files (CSS, JS, images, etc.)
 app.use(express.static(distPath, {
@@ -37,6 +63,7 @@ app.use((req, res) => {
 
   res.sendFile(indexPath);
 });
+
 
 // Start the server
 app.listen(PORT, () => {
