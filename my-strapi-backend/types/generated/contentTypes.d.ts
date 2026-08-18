@@ -588,6 +588,132 @@ export interface ApiMenuItemMenuItem extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiPipelineConfigPipelineConfig
+  extends Struct.SingleTypeSchema {
+  collectionName: 'pipeline_configs';
+  info: {
+    displayName: 'Pipeline Config';
+    pluralName: 'pipeline-configs';
+    singularName: 'pipeline-config';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    articlesPerDay: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<3>;
+    categories: Schema.Attribute.JSON;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    enabled: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    imageStylePrompt: Schema.Attribute.Text;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::pipeline-config.pipeline-config'
+    > &
+      Schema.Attribute.Private;
+    newsSources: Schema.Attribute.JSON;
+    newsWebsites: Schema.Attribute.JSON;
+    publishedAt: Schema.Attribute.DateTime;
+    publishMode: Schema.Attribute.Enumeration<['draft', 'publish']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'draft'>;
+    rewritePrompt: Schema.Attribute.Text;
+    runTime: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'07:00'>;
+    timezone: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'America/New_York'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPipelineLockPipelineLock extends Struct.SingleTypeSchema {
+  collectionName: 'pipeline_locks';
+  info: {
+    displayName: 'Pipeline Lock';
+    pluralName: 'pipeline-locks';
+    singularName: 'pipeline-lock';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+    'content-type-builder': {
+      visible: false;
+    };
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    expiresAt: Schema.Attribute.DateTime;
+    holderToken: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::pipeline-lock.pipeline-lock'
+    > &
+      Schema.Attribute.Private;
+    lockedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPipelineRunPipelineRun extends Struct.CollectionTypeSchema {
+  collectionName: 'pipeline_runs';
+  info: {
+    displayName: 'Pipeline Run';
+    pluralName: 'pipeline-runs';
+    singularName: 'pipeline-run';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    articlesCreated: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    error: Schema.Attribute.Text;
+    finishedAt: Schema.Attribute.DateTime;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::pipeline-run.pipeline-run'
+    > &
+      Schema.Attribute.Private;
+    logs: Schema.Attribute.JSON;
+    publishedAt: Schema.Attribute.DateTime;
+    runStatus: Schema.Attribute.Enumeration<
+      ['running', 'success', 'partial', 'failed']
+    > &
+      Schema.Attribute.Required;
+    startedAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface PluginContentReleasesRelease
   extends Struct.CollectionTypeSchema {
   collectionName: 'strapi_releases';
@@ -1103,6 +1229,9 @@ declare module '@strapi/strapi' {
       'api::category.category': ApiCategoryCategory;
       'api::homepage.homepage': ApiHomepageHomepage;
       'api::menu-item.menu-item': ApiMenuItemMenuItem;
+      'api::pipeline-config.pipeline-config': ApiPipelineConfigPipelineConfig;
+      'api::pipeline-lock.pipeline-lock': ApiPipelineLockPipelineLock;
+      'api::pipeline-run.pipeline-run': ApiPipelineRunPipelineRun;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;

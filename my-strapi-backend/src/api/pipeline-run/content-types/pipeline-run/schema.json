@@ -1,0 +1,37 @@
+{
+  "kind": "collectionType",
+  "collectionName": "pipeline_runs",
+  "info": {
+    "singularName": "pipeline-run",
+    "pluralName": "pipeline-runs",
+    "displayName": "Pipeline Run"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "runStatus": {
+      "type": "enumeration",
+      "enum": ["running", "success", "partial", "failed"],
+      "required": true
+    },
+    "startedAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "finishedAt": {
+      "type": "datetime"
+    },
+    "articlesCreated": {
+      "type": "integer",
+      "default": 0
+    },
+    "logs": {
+      "type": "json"
+    },
+    "error": {
+      "type": "text"
+    }
+  }
+}

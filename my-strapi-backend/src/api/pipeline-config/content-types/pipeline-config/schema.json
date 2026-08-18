@@ -1,0 +1,56 @@
+{
+  "kind": "singleType",
+  "collectionName": "pipeline_configs",
+  "info": {
+    "singularName": "pipeline-config",
+    "pluralName": "pipeline-configs",
+    "displayName": "Pipeline Config"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "articlesPerDay": {
+      "type": "integer",
+      "default": 3,
+      "min": 1,
+      "required": true
+    },
+    "runTime": {
+      "type": "string",
+      "default": "07:00",
+      "required": true
+    },
+    "timezone": {
+      "type": "string",
+      "default": "America/New_York",
+      "required": true
+    },
+    "publishMode": {
+      "type": "enumeration",
+      "enum": ["draft", "publish"],
+      "default": "draft",
+      "required": true
+    },
+    "newsSources": {
+      "type": "json"
+    },
+    "newsWebsites": {
+      "type": "json"
+    },
+    "categories": {
+      "type": "json"
+    },
+    "rewritePrompt": {
+      "type": "text"
+    },
+    "imageStylePrompt": {
+      "type": "text"
+    }
+  }
+}

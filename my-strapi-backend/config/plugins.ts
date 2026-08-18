@@ -8,7 +8,7 @@ import type { Core } from '@strapi/types';
  */
 
 /** Media Library max file size (bytes); used by `strapi::body` in middlewares.ts */
-export const UPLOAD_MAX_BYTES = 500 * 1024;
+export const UPLOAD_MAX_BYTES = 450 * 1024;
 
 const datedLocalDiskProviderPath = path.join(process.cwd(), 'providers', 'upload-local-dated');
 

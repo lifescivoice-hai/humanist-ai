@@ -1,0 +1,55 @@
+type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
+type BlockText = { type: 'text'; text: string; bold?: boolean };
+type Block =
+  | { type: 'paragraph'; children: BlockText[] }
+  | { type: 'heading'; level: HeadingLevel; children: BlockText[] };
+
+const stripMarkdown = (value: string): string =>
+  value
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
+    .trim();
+
+/**
+ * Convert rewritten article text (markdown-ish or plain) into Strapi 5 blocks.
+ */
+export function textToBlocks(text: string): Block[] {
+  const cleaned = (text || '').replace(/\r\n/g, '\n').trim();
+  if (!cleaned) {
+    return [{ type: 'paragraph', children: [{ type: 'text', text: '' }] }];
+  }
+
+  const chunks = cleaned.split(/\n{2,}/);
+  const blocks: Block[] = [];
+
+  for (const chunk of chunks) {
+    const lines = chunk.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (!lines.length) continue;
+
+    const heading = lines[0].match(/^(#{1,3})\s+(.+)$/);
+    if (heading && lines.length === 1) {
+      blocks.push({
+        type: 'heading',
+        level: Math.min(heading[1].length, 6) as HeadingLevel,
+        children: [{ type: 'text', text: stripMarkdown(heading[2]) }],
+      });
+      continue;
+    }
+
+    blocks.push({
+      type: 'paragraph',
+      children: [{ type: 'text', text: stripMarkdown(lines.join(' ')) }],
+    });
+  }
+
+  return blocks.length
+    ? blocks
+    : [{ type: 'paragraph', children: [{ type: 'text', text: cleaned }] }];
+}
+
+export function estimateReadTime(text: string): number {
+  const words = (text || '').trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 200));
+}

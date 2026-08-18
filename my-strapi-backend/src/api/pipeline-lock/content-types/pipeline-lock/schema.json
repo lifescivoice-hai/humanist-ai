@@ -1,0 +1,31 @@
+{
+  "kind": "singleType",
+  "collectionName": "pipeline_locks",
+  "info": {
+    "singularName": "pipeline-lock",
+    "pluralName": "pipeline-locks",
+    "displayName": "Pipeline Lock"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": false
+    },
+    "content-type-builder": {
+      "visible": false
+    }
+  },
+  "attributes": {
+    "holderToken": {
+      "type": "string"
+    },
+    "lockedAt": {
+      "type": "datetime"
+    },
+    "expiresAt": {
+      "type": "datetime"
+    }
+  }
+}

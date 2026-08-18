@@ -1,7 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import AdPlaceholder from "@/components/AdPlaceholder";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Clock, Calendar, User, ArrowRight } from "lucide-react";
@@ -174,18 +173,8 @@ const Post = () => {
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
-
-              {/* Advertisement */}
-              <div className="flex justify-center">
-                <AdPlaceholder size="skyscraper" className="w-full" />
-              </div>
             </aside>
           </div>
-        </div>
-
-        {/* Inline ad before footer */}
-        <div className="py-6 flex justify-center bg-secondary/30">
-          <AdPlaceholder size="leaderboard" />
         </div>
       </main>
 
