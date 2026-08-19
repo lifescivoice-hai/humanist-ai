@@ -13,11 +13,14 @@ const DEFAULT_STYLE =
 
 const IMAGE_ATTEMPTS = 3;
 
+/** Cheapest generally-available Workers AI text-to-image model. */
+export const DEFAULT_IMAGE_MODEL = '@cf/black-forest-labs/flux-1-schnell';
+
 export async function generateImage(
   article: RewrittenArticle,
   config: PipelineConfig,
   onRetry?: (attempt: number, error: Error) => void | Promise<void>,
-  seed = Date.now()
+  attempt = 1
 ): Promise<Buffer> {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
   const token = process.env.CLOUDFLARE_API_TOKEN;
@@ -25,9 +28,14 @@ export async function generateImage(
     throw new Error('CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN is not set');
   }
 
-  const model = process.env.CLOUDFLARE_AI_MODEL || '@cf/black-forest-labs/flux-1-schnell';
+  const model = process.env.CLOUDFLARE_AI_MODEL || DEFAULT_IMAGE_MODEL;
   const style = (config.imageStylePrompt || '').trim() || DEFAULT_STYLE;
-  const prompt = `${style}\nScene inspired by: ${article.title}. ${article.excerpt}`.slice(0, 1800);
+  const variation =
+    attempt > 1 ? `\nVariation ${attempt}: different composition, alternate camera angle.` : '';
+  const prompt = `${style}\nScene inspired by: ${article.title}. ${article.excerpt}${variation}`.slice(
+    0,
+    1800
+  );
 
   const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
 
@@ -41,7 +49,7 @@ export async function generateImage(
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ prompt, seed }),
+          body: JSON.stringify({ prompt, steps: 4 }),
         },
         90000
       ),
@@ -57,7 +65,7 @@ export async function generateImage(
   return Buffer.from(b64, 'base64');
 }
 
-/** Generate a new image and compress it. Retry with a new image if compression cannot stay under 450KB. */
+/** Generate a new image and compress it. Retry with a new prompt if compression cannot stay under 450KB. */
 export async function generateCompressedImage(
   article: RewrittenArticle,
   config: PipelineConfig,
@@ -68,7 +76,7 @@ export async function generateCompressedImage(
 
   for (let attempt = 1; attempt <= IMAGE_ATTEMPTS; attempt += 1) {
     try {
-      const raw = await generateImage(article, config, onRetry, Date.now() + attempt * 997);
+      const raw = await generateImage(article, config, onRetry, attempt);
       return await compressImage(raw);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
