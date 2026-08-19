@@ -4,11 +4,10 @@ const TOKEN_KEY = 'pipeline.token';
 const URL_KEY = 'pipeline.apiUrl';
 
 export function getApiUrl() {
-  return (
-    localStorage.getItem(URL_KEY) ||
-    import.meta.env.VITE_STRAPI_URL ||
-    'http://localhost:1338'
-  ).replace(/\/$/, '');
+  const fromStorage = localStorage.getItem(URL_KEY);
+  const fromEnv = import.meta.env.VITE_STRAPI_URL as string | undefined;
+  const fallback = import.meta.env.PROD ? window.location.origin : 'http://localhost:1338';
+  return (fromStorage || fromEnv || fallback).replace(/\/$/, '');
 }
 
 export function setApiUrl(url: string) {
