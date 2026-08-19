@@ -32,8 +32,8 @@ export function parseGeminiJson<T>(raw: string): T {
   return JSON.parse(trimmed) as T;
 }
 
-function isMockMode() {
-  return String(process.env.GEMINI_MOCK_MODE || '').toLowerCase() === 'true';
+export function isGeminiMockMode(config?: PipelineConfig | null) {
+  return Boolean(config?.geminiMockMode);
 }
 
 async function geminiRequest(model: string, prompt: string): Promise<string> {
@@ -141,7 +141,7 @@ export async function classifyAndRewrite(
   config: PipelineConfig,
   onRetry?: (attempt: number, error: Error) => void | Promise<void>
 ): Promise<CombinedGeminiResult> {
-  if (isMockMode()) {
+  if (isGeminiMockMode(config)) {
     return MOCK_RESULT;
   }
 

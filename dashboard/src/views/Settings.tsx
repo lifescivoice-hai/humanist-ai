@@ -72,6 +72,7 @@ export function Settings({
   const [categories, setCategories] = useState(stringify(config.categories));
   const [rewritePrompt, setRewritePrompt] = useState(config.rewritePrompt || '');
   const [imageStylePrompt, setImageStylePrompt] = useState(config.imageStylePrompt || '');
+  const [geminiMockMode, setGeminiMockMode] = useState(Boolean(config.geminiMockMode));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +88,7 @@ export function Settings({
     setCategories(stringify(config.categories));
     setRewritePrompt(config.rewritePrompt || '');
     setImageStylePrompt(config.imageStylePrompt || '');
+    setGeminiMockMode(Boolean(config.geminiMockMode));
   }, [config]);
 
   const onSubmit = async (event: FormEvent) => {
@@ -106,6 +108,7 @@ export function Settings({
         categories: parseJsonField(categories, 'Categories'),
         rewritePrompt,
         imageStylePrompt,
+        geminiMockMode,
       };
       const next = await saveConfig(body);
       onSaved(next);
@@ -132,6 +135,26 @@ export function Settings({
         >
           <span
             className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition ${enabled ? 'left-5' : 'left-0.5'}`}
+          />
+        </button>
+      </div>
+
+      <div className="card flex items-center justify-between gap-4">
+        <div>
+          <p className="font-semibold">Gemini mock mode</p>
+          <p className="text-sm text-slate-500">
+            When on, classify+rewrite is canned locally so tests do not burn Gemini quota. Images still generate.
+            Turn off before a real run.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setGeminiMockMode((v) => !v)}
+          className={`relative h-7 w-12 rounded-full transition ${geminiMockMode ? 'bg-amber-500' : 'bg-slate-300'}`}
+          aria-pressed={geminiMockMode}
+        >
+          <span
+            className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition ${geminiMockMode ? 'left-5' : 'left-0.5'}`}
           />
         </button>
       </div>

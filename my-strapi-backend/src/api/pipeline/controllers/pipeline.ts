@@ -23,6 +23,7 @@ const CONFIG_KEYS = [
   'categories',
   'rewritePrompt',
   'imageStylePrompt',
+  'geminiMockMode',
 ] as const;
 
 const TIME_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
@@ -107,6 +108,7 @@ function parseBody(body: Record<string, unknown> | undefined) {
   if (typeof body.imageStylePrompt === 'string' || body.imageStylePrompt === null) {
     data.imageStylePrompt = body.imageStylePrompt;
   }
+  if (typeof body.geminiMockMode === 'boolean') data.geminiMockMode = body.geminiMockMode;
   return data;
 }
 

@@ -1,5 +1,5 @@
 export { capCheck, countArticlesCreatedToday } from './capCheck';
-export { classifyAndRewrite } from './classify';
+export { classifyAndRewrite, isGeminiMockMode } from './classify';
 export { compressImage } from './compressImage';
 export { createArticle } from './createArticle';
 export { fetchNews } from './fetchNews';

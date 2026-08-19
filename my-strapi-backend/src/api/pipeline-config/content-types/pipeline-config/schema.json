@@ -51,6 +51,10 @@
     },
     "imageStylePrompt": {
       "type": "text"
+    },
+    "geminiMockMode": {
+      "type": "boolean",
+      "default": false
     }
   }
 }

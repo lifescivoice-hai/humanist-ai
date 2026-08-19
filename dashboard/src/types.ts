@@ -22,6 +22,7 @@ export interface PipelineConfig {
   categories?: unknown;
   rewritePrompt?: string | null;
   imageStylePrompt?: string | null;
+  geminiMockMode?: boolean | null;
   nextRunAt?: string | null;
   lastRun?: LastRun | null;
 }

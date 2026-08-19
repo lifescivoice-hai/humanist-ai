@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi';
 import { capCheck, countArticlesCreatedToday } from './capCheck';
-import { classifyAndRewrite } from './classify';
+import { classifyAndRewrite, isGeminiMockMode } from './classify';
 import { createArticle } from './createArticle';
 import { fetchNews, websitesFromConfig } from './fetchNews';
 import { generateCompressedImage } from './generateImage';
@@ -90,7 +90,11 @@ async function executePipeline(
   };
 
   try {
-    await logger.log('start', 'info', `Run started (force=${Boolean(options.force)}, cap=${articlesPerDay}, mode=${config.publishMode})`);
+    await logger.log(
+      'start',
+      'info',
+      `Run started (force=${Boolean(options.force)}, cap=${articlesPerDay}, mode=${config.publishMode}, geminiMock=${isGeminiMockMode(config)})`
+    );
 
     const priorToday = await countArticlesCreatedToday(strapi, config, run.documentId);
     await logger.log('capCheck', 'info', `${priorToday} article(s) already created today before this run`);
@@ -144,7 +148,7 @@ async function executePipeline(
       }
 
       try {
-        if (geminiCalls > 0 && String(process.env.GEMINI_MOCK_MODE || '').toLowerCase() !== 'true') {
+        if (geminiCalls > 0 && !isGeminiMockMode(config)) {
           await sleep(2000);
         }
         geminiCalls += 1;

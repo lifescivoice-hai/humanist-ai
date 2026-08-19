@@ -614,6 +614,7 @@ export interface ApiPipelineConfigPipelineConfig
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     enabled: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    geminiMockMode: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     imageStylePrompt: Schema.Attribute.Text;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<

@@ -11,6 +11,9 @@ export function Overview({ config }: { config: PipelineConfig }) {
           {config.enabled ? 'Enabled' : 'Disabled'}
         </p>
         <p className="mt-1 text-sm text-slate-500">Master switch from Settings</p>
+        {config.geminiMockMode && (
+          <p className="mt-2 text-sm font-medium text-amber-700">Gemini mock mode is on</p>
+        )}
       </div>
       <div className="card">
         <p className="label">Next run</p>

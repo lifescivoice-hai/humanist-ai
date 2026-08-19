@@ -35,6 +35,8 @@ export interface PipelineConfig {
   categories?: string[] | null;
   rewritePrompt?: string | null;
   imageStylePrompt?: string | null;
+  /** When true, skip Gemini and return a canned classify+rewrite. Toggle from the dashboard. */
+  geminiMockMode?: boolean | null;
 }
 
 export interface NewsArticle {
