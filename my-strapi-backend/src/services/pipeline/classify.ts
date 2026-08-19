@@ -43,18 +43,22 @@ export async function geminiGenerateJson<T>(
     try {
       const data = await withRetry(
         () =>
-          fetchJson<GeminiResponse>(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': apiKey,
+          fetchJson<GeminiResponse>(
+            url,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey,
+              },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { responseMimeType: 'application/json', temperature: 0.4 },
+              }),
             },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: 'application/json', temperature: 0.4 },
-            }),
-          }),
-        { retries: 3, minDelayMs: 8000, onRetry }
+            90000
+          ),
+        { retries: 2, minDelayMs: 8000, onRetry }
       );
 
       if (data.error?.message) {
@@ -69,7 +73,8 @@ export async function geminiGenerateJson<T>(
       return parseGeminiJson<T>(text);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      if (lastError instanceof PipelineHttpError && lastError.status === 404) {
+      const status = lastError instanceof PipelineHttpError ? lastError.status : 0;
+      if (status === 404 || status === 503) {
         continue;
       }
       throw lastError;
