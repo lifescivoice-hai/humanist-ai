@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi';
 import { capCheck, countArticlesCreatedToday } from './capCheck';
-import { classify } from './classify';
+import { classifyAndRewrite } from './classify';
 import { createArticle } from './createArticle';
 import { fetchNews, websitesFromConfig } from './fetchNews';
 import { generateCompressedImage } from './generateImage';
@@ -8,7 +8,6 @@ import { acquireLock, releaseLock } from './lock';
 import { RunLogger } from './logger';
 import { prefilterNews } from './prefilter';
 import { isGeminiQuotaError, sleep } from './retry';
-import { rewrite } from './rewrite';
 import type { PipelineConfig, RunOptions, RunStatus } from './types';
 
 const DEFAULT_CONFIG: Partial<PipelineConfig> = {
@@ -77,6 +76,7 @@ async function executePipeline(
   const logger = new RunLogger(strapi, run.documentId);
   let created = 0;
   let stepErrors = 0;
+  let failureReason: string | null = null;
 
   const finish = async (runStatus: RunStatus, error?: string) => {
     await logger.flush({
@@ -84,6 +84,7 @@ async function executePipeline(
       runStatus,
       finishedAt: new Date().toISOString(),
       error: error || null,
+      failureReason,
     });
     return { skipped: false as const, runStatus, articlesCreated: created, documentId: run.documentId };
   };
@@ -126,17 +127,15 @@ async function executePipeline(
     }
 
     const remaining = Math.max(1, articlesPerDay - priorToday);
-    const skipClassify = websites.length > 0;
     const candidateLimit = remaining + 2;
     const candidates = kept.slice(0, candidateLimit);
     await logger.log(
       'prefilter',
       'info',
-      `Sending ${candidates.length} story(ies) (cap ${articlesPerDay}${skipClassify ? ', classify skipped for listed sites' : ''})`
+      `Sending ${candidates.length} story(ies) to Gemini classify+rewrite (1 call each, cap ${articlesPerDay})`
     );
 
-    const defaultCategory =
-      (Array.isArray(config.categories) && config.categories[0]) || 'AI';
+    let geminiCalls = 0;
 
     for (const item of candidates) {
       if (!capCheck(priorToday + created, articlesPerDay)) {
@@ -145,23 +144,35 @@ async function executePipeline(
       }
 
       try {
-        await sleep(1500);
-        let categoryName = String(defaultCategory);
-        if (!skipClassify) {
-          const verdict = await classify(item, config, retryLog('classify'));
+        if (geminiCalls > 0 && String(process.env.GEMINI_MOCK_MODE || '').toLowerCase() !== 'true') {
+          await sleep(2000);
+        }
+        geminiCalls += 1;
+
+        const gemini = await classifyAndRewrite(item, config, retryLog('gemini'));
+        if (gemini.parseFailed) {
+          stepErrors += 1;
           await logger.log(
-            'classify',
-            'info',
-            `"${item.title}" → relevant=${verdict.relevant} category=${verdict.category}`
+            'gemini',
+            'error',
+            `Skipped "${item.title}": Gemini JSON parse failed. Raw: ${(gemini.raw || '').slice(0, 500)}`
           );
-          if (!verdict.relevant) continue;
-          categoryName = verdict.category;
-        } else {
-          await logger.log('classify', 'info', `"${item.title}" → relevant=true category=${categoryName} (listed site)`);
+          continue;
         }
 
-        const rewritten = await rewrite(item, config, retryLog('rewrite'));
-        await logger.log('rewrite', 'info', `Rewrote as "${rewritten.title}"`);
+        await logger.log(
+          'gemini',
+          'info',
+          `"${item.title}" → relevant=${gemini.relevant} category=${gemini.category}`
+        );
+        if (!gemini.relevant || !gemini.rewritten) {
+          await logger.log('gemini', 'info', `Skipped "${item.title}" (not relevant)`);
+          continue;
+        }
+
+        const rewritten = gemini.rewritten;
+        const categoryName = gemini.category;
+        await logger.log('gemini', 'info', `Rewrote as "${rewritten.title}"`);
 
         const image = await generateCompressedImage(
           rewritten,
@@ -194,7 +205,12 @@ async function executePipeline(
         const msg = articleErr instanceof Error ? articleErr.message : String(articleErr);
         await logger.log('article', 'error', `Skipped "${item.title}": ${msg}`);
         if (isGeminiQuotaError(articleErr)) {
-          await logger.log('run', 'warn', 'Gemini quota hit — stopping so we do not burn remaining calls');
+          failureReason = 'gemini_quota_exhausted';
+          await logger.log(
+            'run',
+            'warn',
+            `Gemini quota hit at ${new Date().toISOString()} — stopping so we do not burn remaining calls`
+          );
           break;
         }
       }
@@ -204,7 +220,7 @@ async function executePipeline(
     if (created === 0 && stepErrors > 0) runStatus = 'failed';
     else if (stepErrors > 0) runStatus = 'partial';
 
-    await logger.log('done', 'info', `Finished with ${created} article(s), status=${runStatus}`);
+    await logger.log('done', 'info', `Finished with ${created} article(s), status=${runStatus}${failureReason ? `, reason=${failureReason}` : ''}`);
     return finish(runStatus);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

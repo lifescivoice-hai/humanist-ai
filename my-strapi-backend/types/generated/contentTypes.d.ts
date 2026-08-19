@@ -694,6 +694,7 @@ export interface ApiPipelineRunPipelineRun extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     error: Schema.Attribute.Text;
+    failureReason: Schema.Attribute.String;
     finishedAt: Schema.Attribute.DateTime;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<

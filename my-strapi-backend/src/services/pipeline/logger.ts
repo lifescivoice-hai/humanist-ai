@@ -25,7 +25,13 @@ export class RunLogger {
     await this.flush();
   }
 
-  async flush(extra: { articlesCreated?: number; runStatus?: RunStatus; finishedAt?: string; error?: string | null } = {}) {
+  async flush(extra: {
+    articlesCreated?: number;
+    runStatus?: RunStatus;
+    finishedAt?: string;
+    error?: string | null;
+    failureReason?: string | null;
+  } = {}) {
     await this.strapi.documents('api::pipeline-run.pipeline-run').update({
       documentId: this.documentId,
       data: {
@@ -34,6 +40,7 @@ export class RunLogger {
         ...(extra.runStatus ? { runStatus: extra.runStatus } : {}),
         ...(extra.finishedAt ? { finishedAt: extra.finishedAt } : {}),
         ...(extra.error !== undefined ? { error: extra.error } : {}),
+        ...(extra.failureReason !== undefined ? { failureReason: extra.failureReason } : {}),
       },
     });
   }

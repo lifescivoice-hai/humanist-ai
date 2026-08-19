@@ -24,6 +24,9 @@ export function Overview({ config }: { config: PipelineConfig }) {
         <div className="mt-2">
           <StatusBadge status={last?.runStatus} />
         </div>
+        {last?.failureReason && (
+          <p className="mt-1 text-sm text-crimson">{last.failureReason}</p>
+        )}
         <p className="mt-2 text-sm text-slate-500">{formatWhen(last?.startedAt)}</p>
       </div>
       <div className="card">

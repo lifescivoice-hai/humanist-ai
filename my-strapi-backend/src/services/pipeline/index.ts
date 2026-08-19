@@ -1,5 +1,5 @@
 export { capCheck, countArticlesCreatedToday } from './capCheck';
-export { classify } from './classify';
+export { classifyAndRewrite } from './classify';
 export { compressImage } from './compressImage';
 export { createArticle } from './createArticle';
 export { fetchNews } from './fetchNews';

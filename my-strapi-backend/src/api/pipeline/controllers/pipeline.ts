@@ -129,6 +129,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
               startedAt: last.startedAt,
               finishedAt: last.finishedAt,
               articlesCreated: last.articlesCreated,
+              failureReason: last.failureReason ?? null,
             }
           : null,
       },

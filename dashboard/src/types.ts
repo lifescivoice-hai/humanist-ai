@@ -7,6 +7,7 @@ export interface LastRun {
   startedAt?: string;
   finishedAt?: string;
   articlesCreated?: number;
+  failureReason?: string | null;
 }
 
 export interface PipelineConfig {
@@ -40,6 +41,7 @@ export interface PipelineRun {
   articlesCreated?: number;
   logs?: PipelineLog[] | null;
   error?: string | null;
+  failureReason?: string | null;
 }
 
 export interface QueueArticle {

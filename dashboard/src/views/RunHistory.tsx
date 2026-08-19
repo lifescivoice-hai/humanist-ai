@@ -93,6 +93,9 @@ export function RunHistory({ onRan }: { onRan: () => void }) {
                   <td className="px-4 py-3">{formatWhen(run.startedAt)}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={run.runStatus} />
+                    {run.failureReason && (
+                      <p className="mt-1 text-xs text-crimson">{run.failureReason}</p>
+                    )}
                   </td>
                   <td className="px-4 py-3">{run.articlesCreated ?? 0}</td>
                   <td className="px-4 py-3">{formatWhen(run.finishedAt)}</td>
@@ -100,6 +103,9 @@ export function RunHistory({ onRan }: { onRan: () => void }) {
                 {openId === run.documentId && (
                   <tr className="bg-slate-50">
                     <td colSpan={4} className="px-4 py-3">
+                      {run.failureReason && (
+                        <p className="mb-2 text-sm font-medium text-crimson">Reason: {run.failureReason}</p>
+                      )}
                       {run.error && <p className="mb-2 text-sm text-crimson">{run.error}</p>}
                       <ul className="space-y-1 font-mono text-xs text-slate-600">
                         {(run.logs || []).map((log, i) => (

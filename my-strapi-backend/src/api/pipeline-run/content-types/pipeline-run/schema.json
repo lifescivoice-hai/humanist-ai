@@ -32,6 +32,9 @@
     },
     "error": {
       "type": "text"
+    },
+    "failureReason": {
+      "type": "string"
     }
   }
 }
