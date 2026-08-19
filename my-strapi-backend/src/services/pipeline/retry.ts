@@ -103,8 +103,20 @@ export async function withRetry<T>(
 
 export { sleep };
 
-export function isGeminiQuotaError(err: unknown): boolean {
-  if (err instanceof PipelineHttpError && err.status === 429) return true;
+function errorBlob(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
-  return /429|exceeded your current quota/i.test(msg);
+  const body = err instanceof PipelineHttpError ? err.body : '';
+  return `${msg} ${body}`;
+}
+
+/** True only for Google Gemini quota — not Cloudflare Workers AI 429s. */
+export function isGeminiQuotaError(err: unknown): boolean {
+  const blob = errorBlob(err);
+  if (/cloudflare|workers ai|capacity temporarily exceeded/i.test(blob)) return false;
+  return /ai\.google\.dev|generativelanguage|exceeded your current quota|RESOURCE_EXHAUSTED/i.test(blob);
+}
+
+export function isCloudflareImageCapacityError(err: unknown): boolean {
+  const blob = errorBlob(err);
+  return /capacity temporarily exceeded|code"?\s*:\s*3040/i.test(blob);
 }

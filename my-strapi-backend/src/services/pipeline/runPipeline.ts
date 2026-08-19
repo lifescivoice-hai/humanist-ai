@@ -7,7 +7,7 @@ import { generateCompressedImage } from './generateImage';
 import { acquireLock, releaseLock } from './lock';
 import { RunLogger } from './logger';
 import { prefilterNews } from './prefilter';
-import { isGeminiQuotaError, sleep } from './retry';
+import { isCloudflareImageCapacityError, isGeminiQuotaError, sleep } from './retry';
 import type { PipelineConfig, RunOptions, RunStatus } from './types';
 
 const DEFAULT_CONFIG: Partial<PipelineConfig> = {
@@ -216,6 +216,13 @@ async function executePipeline(
             `Gemini quota hit at ${new Date().toISOString()} — stopping so we do not burn remaining calls`
           );
           break;
+        }
+        if (isCloudflareImageCapacityError(articleErr)) {
+          await logger.log(
+            'generateImage',
+            'warn',
+            'Cloudflare Workers AI capacity exceeded (HTTP 429) — not a Gemini quota. Skipping this article and continuing.'
+          );
         }
       }
     }
