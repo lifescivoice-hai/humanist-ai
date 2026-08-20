@@ -7,14 +7,7 @@ const Footer = () => {
     content: [
       { label: "Blogs", href: "/blogs" },
       { label: "Articles", href: "/articles" },
-      { label: "Podcast", href: "/podcast" },
       { label: "Newsletters", href: "/newsletters" },
-    ],
-    events: [
-      { label: "Awards 2026", href: "/awards" },
-      { label: "Conferences", href: "/events" },
-      { label: "Workshops", href: "/workshops" },
-      { label: "Webinars", href: "/webinars" },
     ],
     company: [
       { label: "About Us", href: "/about" },
@@ -39,7 +32,7 @@ const Footer = () => {
   return (
     <footer className="bg-navy text-primary-foreground">
       <div className="section-container py-16">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="col-span-2">
             <img src={logo} alt="The Humanist AI" className="h-8 mb-4 brightness-0 invert" />
@@ -72,23 +65,6 @@ const Footer = () => {
             <h4 className="font-semibold mb-4">Content</h4>
             <ul className="space-y-2">
               {footerLinks.content.map((link) => (
-                <li key={link.href}>
-                  <Link 
-                    to={link.href} 
-                    className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Events */}
-          <div>
-            <h4 className="font-semibold mb-4">Events</h4>
-            <ul className="space-y-2">
-              {footerLinks.events.map((link) => (
                 <li key={link.href}>
                   <Link 
                     to={link.href} 

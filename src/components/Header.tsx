@@ -27,13 +27,16 @@ const Header = () => {
   const fallbackNavItems = [
     { label: "Blogs", href: "/blogs" },
     { label: "Articles", href: "/articles" },
-    { label: "Podcast", href: "/podcast" },
-    { label: "Events", href: "/events" },
     { label: "About", href: "/about" },
   ];
   const { data: menuItems, isPending: isMenuPending } = useMenuItems("header");
+  const hiddenPaths = new Set(["/podcast", "/events", "/awards", "/workshops", "/webinars"]);
   const navItems =
-    menuItems != null ? menuItems.map((item) => ({ label: item.label, href: item.path })) : [];
+    menuItems != null
+      ? menuItems
+          .map((item) => ({ label: item.label, href: item.path }))
+          .filter((item) => !hiddenPaths.has(item.href.replace(/\/$/, "") || "/"))
+      : [];
   // While the first fetch runs, show a skeleton — not the hardcoded fallback — to avoid a flash of wrong links.
   const resolvedNavItems = navItems.length > 0 ? navItems : fallbackNavItems;
 
