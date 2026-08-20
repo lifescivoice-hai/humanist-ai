@@ -163,6 +163,15 @@ async function executePipeline(
           );
           continue;
         }
+        if (gemini.tooShort) {
+          stepErrors += 1;
+          await logger.log(
+            'gemini',
+            'warn',
+            `Skipped "${item.title}": rewrite was ${gemini.tooShort} words (need at least 650)`
+          );
+          continue;
+        }
 
         await logger.log(
           'gemini',

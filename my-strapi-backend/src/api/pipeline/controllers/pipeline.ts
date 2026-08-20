@@ -199,12 +199,13 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
 
   async getQueue(ctx: Ctx) {
     const config = await loadOrCreateConfig(strapi);
-    const articles = await strapi.documents('api::article.article').findMany({
-      status: 'draft',
-      filters: { publishedAt: { $null: true } },
-      sort: { createdAt: 'desc' },
+    // documents().findMany({ filters: { publishedAt: $null } }) is unreliable in Strapi 5.
+    // Query the draft rows that have never been published.
+    const articles = await strapi.db.query('api::article.article').findMany({
+      where: { publishedAt: { $null: true } },
+      orderBy: { createdAt: 'desc' },
       limit: 50,
-      populate: { featuredImage: true, categories: true },
+      populate: ['featuredImage', 'categories'],
     });
 
     ctx.body = {

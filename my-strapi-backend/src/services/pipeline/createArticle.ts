@@ -64,7 +64,7 @@ export async function createArticle(
 ) {
   const publishMode = options.config.publishMode === 'publish' ? 'publish' : 'draft';
   const slug = slugify(article.title) || `article-${Date.now()}`;
-  const author = process.env.PIPELINE_ARTICLE_AUTHOR || 'The Humanist AI';
+  const author = process.env.PIPELINE_ARTICLE_AUTHOR || 'Editorial Team';
   const published = new Date().toISOString().slice(0, 10);
 
   if (!options.image.length) {

@@ -16,11 +16,21 @@ const MODEL_FALLBACKS = [
   'gemini-flash-latest',
 ];
 
+const MIN_REWRITE_WORDS = 650;
+
 const DEFAULT_REWRITE_PROMPT = `Rewrite this news story for The Humanist AI, a publication about keeping humans at the center of technology.
 Voice: clear, thoughtful, non-hype. No clickbait. No invented facts — only what is in the source.
 - rewrittenTitle: original, under 90 characters
 - excerpt: 1-2 sentences
-- rewrittenBody: 4-8 short paragraphs, markdown allowed (## headings). Do not mention that this is a rewrite.`;
+- rewrittenBody: a full article of AT LEAST ${MIN_REWRITE_WORDS} words (target ${MIN_REWRITE_WORDS}–900). Use ## headings and several developed paragraphs. Do not mention that this is a rewrite.`;
+
+export function countWords(text: string): number {
+  return (text || '')
+    .replace(/[#*_`>]/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+}
 
 function geminiModels(): string[] {
   const preferred = (process.env.GEMINI_MODEL || '').trim();
@@ -53,7 +63,11 @@ async function geminiRequest(model: string, prompt: string): Promise<string> {
       },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json', temperature: 0.4 },
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.4,
+          maxOutputTokens: 8192,
+        },
       }),
     },
     90000
@@ -110,6 +124,7 @@ export interface CombinedGeminiResult {
   reason?: string;
   rewritten: RewrittenArticle | null;
   parseFailed?: boolean;
+  tooShort?: number;
   raw?: string;
 }
 
@@ -169,6 +184,8 @@ category MUST be one of: ${categories}.
 Skip celebrity gossip, sports scores, and generic finance unless they are about AI.
 If relevant is false, still return JSON but leave rewrittenTitle, excerpt, and rewrittenBody as empty strings.
 
+HARD REQUIREMENT: if relevant is true, rewrittenBody MUST be at least ${MIN_REWRITE_WORDS} English words. Count before you finish. Short articles are unacceptable. Expand with what happened, context, and why it matters for humans and society. Do not invent facts, quotes, numbers, or events that are not in the source.
+
 ${rewriteGuide}
 
 SOURCE TITLE: ${article.title}
@@ -207,6 +224,17 @@ SOURCE CONTENT: ${article.content}`;
       relevant: true,
       category,
       parseFailed: true,
+      raw: raw.slice(0, 4000),
+      rewritten: null,
+    };
+  }
+
+  const words = countWords(content);
+  if (words < MIN_REWRITE_WORDS) {
+    return {
+      relevant: true,
+      category,
+      tooShort: words,
       raw: raw.slice(0, 4000),
       rewritten: null,
     };
