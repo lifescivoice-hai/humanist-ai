@@ -1,5 +1,5 @@
 import type { NewsArticle, PipelineConfig, RewrittenArticle } from './types';
-import { fetchJson, isGeminiQuotaError, PipelineHttpError, sleep } from './retry';
+import { fetchJson, fetchText, isGeminiQuotaError, PipelineHttpError, sleep } from './retry';
 
 interface GeminiResponse {
   candidates?: Array<{
@@ -11,18 +11,26 @@ interface GeminiResponse {
 const DEFAULT_CATEGORIES = ['AI', 'Technology', 'Ethics', 'Society'];
 
 const MODEL_FALLBACKS = [
-  'gemini-2.5-flash-lite',
   'gemini-2.5-flash',
   'gemini-flash-latest',
+  'gemini-2.5-flash-lite',
 ];
 
 const MIN_REWRITE_WORDS = 650;
 
-const DEFAULT_REWRITE_PROMPT = `Rewrite this news story for The Humanist AI, a publication about keeping humans at the center of technology.
-Voice: clear, thoughtful, non-hype. No clickbait. No invented facts — only what is in the source.
-- rewrittenTitle: original, under 90 characters
-- excerpt: 1-2 sentences
-- rewrittenBody: a full article of AT LEAST ${MIN_REWRITE_WORDS} words (target ${MIN_REWRITE_WORDS}–900). Use ## headings and several developed paragraphs. Do not mention that this is a rewrite.`;
+const DEFAULT_REWRITE_PROMPT = `You are a senior SEO editor and staff writer for The Humanist AI, a publication about keeping humans at the center of technology.
+Write a Google-ready news analysis, not a 4-paragraph summary. Voice: clear, expert, people-first. No clickbait. No keyword stuffing. No invented facts, quotes, numbers, or events.
+Google SEO requirements:
+- rewrittenTitle: unique, specific, primary keyword near the front, 50–65 characters (max 90)
+- excerpt: meta description, 140–160 characters, includes the primary topic, no quotes wrapping it
+- rewrittenBody: AT LEAST ${MIN_REWRITE_WORDS} words (target 750–1000). Must stand alone if the source is a short blurb.
+Structure rewrittenBody as markdown:
+1. Opening 2–3 paragraphs that state what happened, who is involved, and why it matters
+2. At least four ## H2 sections (what changed, background/context, human and enterprise impact, what to watch next)
+3. Optional ### H3s where useful
+4. Close with a short "What this means" takeaway
+5. Optional ## FAQ with 2–3 real questions readers would search
+Each H2 needs several full paragraphs (not one-liners). Explain implications for workers, customers, and organizations using only facts in the source plus careful analysis of those facts.`;
 
 export function countWords(text: string): number {
   return (text || '')
@@ -46,6 +54,61 @@ export function isGeminiMockMode(config?: PipelineConfig | null) {
   return Boolean(config?.geminiMockMode);
 }
 
+function extractReadableText(html: string): string {
+  const withoutJunk = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ');
+  const main =
+    withoutJunk.match(/<article[\s\S]*?<\/article>/i)?.[0] ||
+    withoutJunk.match(/<main[\s\S]*?<\/main>/i)?.[0] ||
+    withoutJunk;
+  return main
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|h1|h2|h3|li|blockquote)>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function ensureSourceBody(article: NewsArticle): Promise<NewsArticle> {
+  const existing = `${article.description || ''} ${article.content || ''}`;
+  if (countWords(existing) >= 220) return article;
+  try {
+    const res = await fetchText(article.url, {}, 15000);
+    if (res.status >= 400 || !res.text) return article;
+    const extracted = extractReadableText(res.text);
+    if (countWords(extracted) < 80) return article;
+    return { ...article, content: extracted.slice(0, 14000) };
+  } catch {
+    return article;
+  }
+}
+
+function jsonShapeBlock(categories: string) {
+  return `Return ONLY JSON. No markdown fences. No preamble.
+
+JSON shape:
+{
+  "relevant": boolean,
+  "category": string,
+  "reason": string,
+  "rewrittenTitle": string,
+  "excerpt": string,
+  "rewrittenBody": string
+}
+
+relevant=true only if the story is about AI, technology, digital society, ethics, or human impact of tech.
+category MUST be one of: ${categories}.
+Skip celebrity gossip, sports scores, and generic finance unless they are about AI.
+If relevant is false, still return JSON but leave rewrittenTitle, excerpt, and rewrittenBody as empty strings.`;
+}
+
 async function geminiRequest(model: string, prompt: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -65,7 +128,7 @@ async function geminiRequest(model: string, prompt: string): Promise<string> {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
           responseMimeType: 'application/json',
-          temperature: 0.4,
+          temperature: 0.65,
           maxOutputTokens: 8192,
         },
       }),
@@ -133,10 +196,10 @@ interface CombinedGeminiJson {
   category?: string;
   reason?: string;
   rewrittenTitle?: string;
-  rewrittenBody?: string;
+  rewrittenBody?: string | string[];
   title?: string;
   excerpt?: string;
-  content?: string;
+  content?: string | string[];
 }
 
 const MOCK_RESULT: CombinedGeminiResult = {
@@ -151,6 +214,33 @@ const MOCK_RESULT: CombinedGeminiResult = {
   },
 };
 
+function toRewritten(
+  parsed: CombinedGeminiJson,
+  category: string,
+  reason?: string
+): CombinedGeminiResult {
+  const title = (parsed.rewrittenTitle || parsed.title || '').trim();
+  const body = parsed.rewrittenBody ?? parsed.content;
+  const content = Array.isArray(body) ? body.join('\n\n') : String(body || '').trim();
+  const excerpt = (parsed.excerpt || content).replace(/\s+/g, ' ').trim().slice(0, 160);
+
+  if (!title || !content) {
+    return { relevant: true, category, parseFailed: true, rewritten: null };
+  }
+
+  const words = countWords(content);
+  if (words < MIN_REWRITE_WORDS) {
+    return { relevant: true, category, tooShort: words, rewritten: { title, excerpt, content } };
+  }
+
+  return {
+    relevant: true,
+    category,
+    reason,
+    rewritten: { title, excerpt, content },
+  };
+}
+
 export async function classifyAndRewrite(
   article: NewsArticle,
   config: PipelineConfig,
@@ -160,39 +250,28 @@ export async function classifyAndRewrite(
     return MOCK_RESULT;
   }
 
+  const source = await ensureSourceBody(article);
   const categories = (config.categories && config.categories.length
     ? config.categories
     : DEFAULT_CATEGORIES
   ).join(', ');
-  const rewriteGuide = (config.rewritePrompt || '').trim() || DEFAULT_REWRITE_PROMPT;
+  const extraGuide = (config.rewritePrompt || '').trim();
+  const rewriteGuide = extraGuide
+    ? `${DEFAULT_REWRITE_PROMPT}\n\nAdditional editor notes:\n${extraGuide}`
+    : DEFAULT_REWRITE_PROMPT;
 
-  const prompt = `You classify AND rewrite news for The Humanist AI in a single response.
-Return ONLY JSON. No markdown fences. No preamble.
-
-JSON shape:
-{
-  "relevant": boolean,
-  "category": string,
-  "reason": string,
-  "rewrittenTitle": string,
-  "excerpt": string,
-  "rewrittenBody": string
-}
-
-relevant=true only if the story is about AI, technology, digital society, ethics, or human impact of tech.
-category MUST be one of: ${categories}.
-Skip celebrity gossip, sports scores, and generic finance unless they are about AI.
-If relevant is false, still return JSON but leave rewrittenTitle, excerpt, and rewrittenBody as empty strings.
-
-HARD REQUIREMENT: if relevant is true, rewrittenBody MUST be at least ${MIN_REWRITE_WORDS} English words. Count before you finish. Short articles are unacceptable. Expand with what happened, context, and why it matters for humans and society. Do not invent facts, quotes, numbers, or events that are not in the source.
+  const prompt = `Act as a senior Google SEO expert and news editor. Classify AND write a full article for The Humanist AI in one response.
+${jsonShapeBlock(categories)}
 
 ${rewriteGuide}
 
-SOURCE TITLE: ${article.title}
-SOURCE NAME: ${article.sourceName}
-SOURCE URL: ${article.url}
-SOURCE DESCRIPTION: ${article.description}
-SOURCE CONTENT: ${article.content}`;
+HARD REQUIREMENT: if relevant is true, rewrittenBody MUST contain at least ${MIN_REWRITE_WORDS} English words (count them). A 150–300 word summary is a failed response. Do not mention that this is a rewrite.
+
+SOURCE TITLE: ${source.title}
+SOURCE NAME: ${source.sourceName}
+SOURCE URL: ${source.url}
+SOURCE DESCRIPTION: ${source.description}
+SOURCE CONTENT: ${source.content}`;
 
   const raw = await geminiGenerateText(prompt, onRetry);
 
@@ -215,35 +294,52 @@ SOURCE CONTENT: ${article.content}`;
     return { relevant: false, category, reason: parsed.reason, rewritten: null };
   }
 
-  const title = (parsed.rewrittenTitle || parsed.title || '').trim();
-  const content = (parsed.rewrittenBody || parsed.content || '').trim();
-  const excerpt = (parsed.excerpt || content).replace(/\s+/g, ' ').trim().slice(0, 280);
+  let result = toRewritten(parsed, category, parsed.reason);
+  if (result.parseFailed) {
+    result.raw = raw.slice(0, 4000);
+    return result;
+  }
 
-  if (!title || !content) {
+  if (result.tooShort && result.rewritten) {
+    const expandPrompt = `The previous draft was only ${result.tooShort} words. That fails Google SEO length. Expand it to at least ${MIN_REWRITE_WORDS} words (target 750–1000) without inventing facts.
+Keep the same story and JSON shape. rewrittenBody needs four or more ## sections and full paragraphs under each.
+${jsonShapeBlock(categories)}
+${rewriteGuide}
+
+DRAFT TITLE: ${result.rewritten.title}
+DRAFT EXCERPT: ${result.rewritten.excerpt}
+DRAFT BODY: ${result.rewritten.content}
+
+SOURCE TITLE: ${source.title}
+SOURCE CONTENT: ${source.content}`;
+
+    const expandedRaw = await geminiGenerateText(expandPrompt, onRetry);
+    try {
+      const expanded = parseGeminiJson<CombinedGeminiJson>(expandedRaw);
+      result = toRewritten(expanded, category, expanded.reason);
+      if (result.parseFailed || result.tooShort) {
+        result.raw = expandedRaw.slice(0, 4000);
+      }
+    } catch {
+      return {
+        relevant: true,
+        category,
+        tooShort: result.tooShort,
+        raw: expandedRaw.slice(0, 4000),
+        rewritten: null,
+      };
+    }
+  }
+
+  if (result.tooShort) {
     return {
       relevant: true,
       category,
-      parseFailed: true,
-      raw: raw.slice(0, 4000),
+      tooShort: result.tooShort,
+      raw: result.raw,
       rewritten: null,
     };
   }
 
-  const words = countWords(content);
-  if (words < MIN_REWRITE_WORDS) {
-    return {
-      relevant: true,
-      category,
-      tooShort: words,
-      raw: raw.slice(0, 4000),
-      rewritten: null,
-    };
-  }
-
-  return {
-    relevant: true,
-    category,
-    reason: parsed.reason,
-    rewritten: { title, excerpt, content },
-  };
+  return result;
 }

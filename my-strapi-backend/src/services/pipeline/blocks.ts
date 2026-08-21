@@ -28,20 +28,30 @@ export function textToBlocks(text: string): Block[] {
     const lines = chunk.split('\n').map((l) => l.trim()).filter(Boolean);
     if (!lines.length) continue;
 
-    const heading = lines[0].match(/^(#{1,3})\s+(.+)$/);
-    if (heading && lines.length === 1) {
-      blocks.push({
-        type: 'heading',
-        level: Math.min(heading[1].length, 6) as HeadingLevel,
-        children: [{ type: 'text', text: stripMarkdown(heading[2]) }],
-      });
-      continue;
+    let i = 0;
+    while (i < lines.length) {
+      const heading = lines[i].match(/^(#{1,3})\s+(.+)$/);
+      if (heading) {
+        blocks.push({
+          type: 'heading',
+          level: Math.min(heading[1].length, 6) as HeadingLevel,
+          children: [{ type: 'text', text: stripMarkdown(heading[2]) }],
+        });
+        i += 1;
+        continue;
+      }
+      const para: string[] = [];
+      while (i < lines.length && !/^(#{1,3})\s+/.test(lines[i])) {
+        para.push(lines[i]);
+        i += 1;
+      }
+      if (para.length) {
+        blocks.push({
+          type: 'paragraph',
+          children: [{ type: 'text', text: stripMarkdown(para.join(' ')) }],
+        });
+      }
     }
-
-    blocks.push({
-      type: 'paragraph',
-      children: [{ type: 'text', text: stripMarkdown(lines.join(' ')) }],
-    });
   }
 
   return blocks.length

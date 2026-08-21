@@ -69,12 +69,15 @@ export function parseFeed(xml: string, fallbackSource: string): NewsArticle[] {
     const title = stripHtml(tagInner(chunk, 'title'));
     const url = itemLink(chunk);
     if (!title || !url) continue;
-    const description = stripHtml(
-      tagInner(chunk, 'description') ||
-        tagInner(chunk, 'summary') ||
-        tagInner(chunk, 'content:encoded') ||
-        tagInner(chunk, 'content')
+    const fullBody = stripHtml(
+      tagInner(chunk, 'content:encoded') ||
+        tagInner(chunk, 'content') ||
+        tagInner(chunk, 'description') ||
+        tagInner(chunk, 'summary')
     );
+    const description = stripHtml(
+      tagInner(chunk, 'description') || tagInner(chunk, 'summary') || fullBody
+    ).slice(0, 500);
     const publishedAt =
       tagInner(chunk, 'pubDate') ||
       tagInner(chunk, 'published') ||
@@ -89,7 +92,7 @@ export function parseFeed(xml: string, fallbackSource: string): NewsArticle[] {
     articles.push({
       title,
       description,
-      content: description,
+      content: fullBody || description,
       url,
       sourceName,
       publishedAt: Number.isNaN(parsedDate.getTime()) ? new Date().toISOString() : parsedDate.toISOString(),

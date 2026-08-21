@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi';
 import { capCheck, countArticlesCreatedToday } from './capCheck';
-import { classifyAndRewrite, isGeminiMockMode } from './classify';
+import { classifyAndRewrite, countWords, isGeminiMockMode } from './classify';
 import { createArticle } from './createArticle';
 import { fetchNews, websitesFromConfig } from './fetchNews';
 import { generateCompressedImage } from './generateImage';
@@ -185,7 +185,11 @@ async function executePipeline(
 
         const rewritten = gemini.rewritten;
         const categoryName = gemini.category;
-        await logger.log('gemini', 'info', `Rewrote as "${rewritten.title}"`);
+        await logger.log(
+          'gemini',
+          'info',
+          `Rewrote as "${rewritten.title}" (${countWords(rewritten.content)} words)`
+        );
 
         const image = await generateCompressedImage(
           rewritten,
