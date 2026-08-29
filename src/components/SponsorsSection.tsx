@@ -29,19 +29,14 @@ function SponsorLogo({ name, domain }: Sponsor) {
   const src = sources[sourceIndex];
 
   if (!src) {
-    return (
-      <span className="text-sm md:text-base font-semibold text-navy/80 tracking-tight whitespace-nowrap">
-        {name}
-      </span>
-    );
+    return <span className="h-10 md:h-12" aria-hidden />;
   }
 
   return (
     <img
       src={src}
-      alt={`${name} logo`}
-      title={name}
-      className="h-10 md:h-12 w-auto max-w-[10rem] object-contain grayscale opacity-80 transition duration-300 group-hover:grayscale-0 group-hover:opacity-100"
+      alt=""
+      className="h-10 md:h-12 w-auto max-w-[10rem] object-contain opacity-90 transition duration-300 group-hover:opacity-100"
       loading="lazy"
       onError={() => setSourceIndex((i) => i + 1)}
     />
@@ -70,9 +65,12 @@ const SponsorsSection = () => {
           {loop.map((sponsor, index) => (
             <div
               key={`${sponsor.domain}-${index}`}
-              className="group flex items-center justify-center mx-6 md:mx-10 h-16 md:h-20 min-w-[8rem]"
+              className="group flex flex-col items-center justify-center gap-2 mx-6 md:mx-10 min-w-[8.5rem]"
             >
               <SponsorLogo {...sponsor} />
+              <span className="text-xs md:text-sm font-medium text-muted-foreground text-center whitespace-nowrap">
+                {sponsor.name}
+              </span>
             </div>
           ))}
         </div>
