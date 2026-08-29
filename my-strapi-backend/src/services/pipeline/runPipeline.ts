@@ -168,7 +168,7 @@ async function executePipeline(
           await logger.log(
             'gemini',
             'warn',
-            `Skipped "${item.title}": rewrite was ${gemini.tooShort} words (need at least 650)`
+            `Skipped "${item.title}": rewrite was ${gemini.tooShort} words (need at least 800)`
           );
           continue;
         }

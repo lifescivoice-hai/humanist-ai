@@ -4,33 +4,39 @@ import { fetchJson, fetchText, isGeminiQuotaError, PipelineHttpError, sleep } fr
 interface GeminiResponse {
   candidates?: Array<{
     content?: { parts?: Array<{ text?: string }> };
+    finishReason?: string;
   }>;
   error?: { message?: string };
 }
 
 const DEFAULT_CATEGORIES = ['AI', 'Technology', 'Ethics', 'Society'];
 
-const MODEL_FALLBACKS = [
+const CLASSIFY_MODELS = [
   'gemini-2.5-flash',
   'gemini-flash-latest',
   'gemini-2.5-flash-lite',
 ];
 
-const MIN_REWRITE_WORDS = 650;
+/** Lite writes summaries. Do not use it for the article body. */
+const WRITE_MODELS = ['gemini-2.5-flash', 'gemini-flash-latest'];
 
-const DEFAULT_REWRITE_PROMPT = `You are a senior SEO editor and staff writer for The Humanist AI, a publication about keeping humans at the center of technology.
-Write a Google-ready news analysis, not a 4-paragraph summary. Voice: clear, expert, people-first. No clickbait. No keyword stuffing. No invented facts, quotes, numbers, or events.
-Google SEO requirements:
-- rewrittenTitle: unique, specific, primary keyword near the front, 50–65 characters (max 90)
-- excerpt: meta description, 140–160 characters, includes the primary topic, no quotes wrapping it
-- rewrittenBody: AT LEAST ${MIN_REWRITE_WORDS} words (target 750–1000). Must stand alone if the source is a short blurb.
-Structure rewrittenBody as markdown:
-1. Opening 2–3 paragraphs that state what happened, who is involved, and why it matters
-2. At least four ## H2 sections (what changed, background/context, human and enterprise impact, what to watch next)
-3. Optional ### H3s where useful
-4. Close with a short "What this means" takeaway
-5. Optional ## FAQ with 2–3 real questions readers would search
-Each H2 needs several full paragraphs (not one-liners). Explain implications for workers, customers, and organizations using only facts in the source plus careful analysis of those facts.`;
+const MIN_REWRITE_WORDS = 800;
+
+const WRITE_BRIEF = `You are a senior Google SEO editor and staff writer for The Humanist AI.
+Write a complete news-analysis article, not a brief. People-first, no clickbait, no keyword stuffing.
+Do not invent facts, quotes, numbers, or events. You may analyze implications of facts that are in the source.
+
+HARD LENGTH RULE: the article body MUST be at least ${MIN_REWRITE_WORDS} English words (target 900–1200).
+A 200–400 word summary is a failed response. Count before you stop.
+
+Output ONLY markdown for the body. No JSON. No title line. No preamble. No word-count footnote.
+Structure:
+- 2–3 opening paragraphs (what happened, who, why it matters)
+- At least five ## H2 sections, each with 2–4 full paragraphs (not one-liners)
+  Suggested H2s: What changed; Background; Why it matters for people and organizations; Risks and open questions; What to watch next
+- Optional ### H3s
+- Close with ## What this means
+- Optional ## FAQ with 2–3 search-style questions and 2–3 sentence answers`;
 
 export function countWords(text: string): number {
   return (text || '')
@@ -40,11 +46,6 @@ export function countWords(text: string): number {
     .filter(Boolean).length;
 }
 
-function geminiModels(): string[] {
-  const preferred = (process.env.GEMINI_MODEL || '').trim();
-  return [...new Set([preferred, ...MODEL_FALLBACKS].filter(Boolean))];
-}
-
 export function parseGeminiJson<T>(raw: string): T {
   const trimmed = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
   return JSON.parse(trimmed) as T;
@@ -52,6 +53,13 @@ export function parseGeminiJson<T>(raw: string): T {
 
 export function isGeminiMockMode(config?: PipelineConfig | null) {
   return Boolean(config?.geminiMockMode);
+}
+
+function modelList(write: boolean): string[] {
+  const preferred = (process.env.GEMINI_MODEL || '').trim();
+  const fallbacks = write ? WRITE_MODELS : CLASSIFY_MODELS;
+  const allowed = write && /lite/i.test(preferred) ? fallbacks : [...new Set([preferred, ...fallbacks].filter(Boolean))];
+  return allowed;
 }
 
 function extractReadableText(html: string): string {
@@ -78,38 +86,31 @@ function extractReadableText(html: string): string {
 
 async function ensureSourceBody(article: NewsArticle): Promise<NewsArticle> {
   const existing = `${article.description || ''} ${article.content || ''}`;
-  if (countWords(existing) >= 220) return article;
+  if (countWords(existing) >= 400) return article;
   try {
-    const res = await fetchText(article.url, {}, 15000);
+    const res = await fetchText(article.url, {}, 20000);
     if (res.status >= 400 || !res.text) return article;
     const extracted = extractReadableText(res.text);
     if (countWords(extracted) < 80) return article;
-    return { ...article, content: extracted.slice(0, 14000) };
+    return { ...article, content: extracted.slice(0, 16000) };
   } catch {
     return article;
   }
 }
 
-function jsonShapeBlock(categories: string) {
-  return `Return ONLY JSON. No markdown fences. No preamble.
-
-JSON shape:
-{
-  "relevant": boolean,
-  "category": string,
-  "reason": string,
-  "rewrittenTitle": string,
-  "excerpt": string,
-  "rewrittenBody": string
+function sourceBlock(article: NewsArticle) {
+  return `SOURCE TITLE: ${article.title}
+SOURCE NAME: ${article.sourceName}
+SOURCE URL: ${article.url}
+SOURCE DESCRIPTION: ${article.description}
+SOURCE CONTENT: ${article.content}`;
 }
 
-relevant=true only if the story is about AI, technology, digital society, ethics, or human impact of tech.
-category MUST be one of: ${categories}.
-Skip celebrity gossip, sports scores, and generic finance unless they are about AI.
-If relevant is false, still return JSON but leave rewrittenTitle, excerpt, and rewrittenBody as empty strings.`;
-}
-
-async function geminiRequest(model: string, prompt: string): Promise<string> {
+async function geminiRequest(
+  model: string,
+  prompt: string,
+  json: boolean
+): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY is not set');
@@ -127,13 +128,13 @@ async function geminiRequest(model: string, prompt: string): Promise<string> {
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.65,
-          maxOutputTokens: 8192,
+          ...(json ? { responseMimeType: 'application/json' } : {}),
+          temperature: json ? 0.3 : 0.7,
+          maxOutputTokens: json ? 1024 : 8192,
         },
       }),
     },
-    90000
+    120000
   );
 
   if (data.error?.message) {
@@ -144,20 +145,23 @@ async function geminiRequest(model: string, prompt: string): Promise<string> {
   if (!text) {
     throw new Error('Gemini returned an empty response');
   }
-  return text;
+  return text.trim();
 }
 
-/** One Gemini HTTP call, plus at most one retry (never on 429). 404 falls through to the next model. */
-export async function geminiGenerateText(
+async function geminiGenerateText(
   prompt: string,
-  onRetry?: (attempt: number, error: Error) => void | Promise<void>
+  options: {
+    json?: boolean;
+    write?: boolean;
+    onRetry?: (attempt: number, error: Error) => void | Promise<void>;
+  } = {}
 ): Promise<string> {
-  const models = geminiModels();
+  const models = modelList(Boolean(options.write));
   let lastError: Error = new Error('Gemini request failed');
 
   for (const model of models) {
     try {
-      return await geminiRequest(model, prompt);
+      return await geminiRequest(model, prompt, Boolean(options.json));
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
       if (isGeminiQuotaError(lastError)) {
@@ -167,10 +171,10 @@ export async function geminiGenerateText(
       if (status === 404) {
         continue;
       }
-      if (onRetry) await onRetry(1, lastError);
+      if (options.onRetry) await options.onRetry(1, lastError);
       await sleep(4000);
       try {
-        return await geminiRequest(model, prompt);
+        return await geminiRequest(model, prompt, Boolean(options.json));
       } catch (retryErr) {
         lastError = retryErr instanceof Error ? retryErr : new Error(String(retryErr));
         throw lastError;
@@ -191,15 +195,13 @@ export interface CombinedGeminiResult {
   raw?: string;
 }
 
-interface CombinedGeminiJson {
+interface ClassifyJson {
   relevant?: boolean;
   category?: string;
   reason?: string;
   rewrittenTitle?: string;
-  rewrittenBody?: string | string[];
   title?: string;
   excerpt?: string;
-  content?: string | string[];
 }
 
 const MOCK_RESULT: CombinedGeminiResult = {
@@ -214,31 +216,29 @@ const MOCK_RESULT: CombinedGeminiResult = {
   },
 };
 
-function toRewritten(
-  parsed: CombinedGeminiJson,
-  category: string,
-  reason?: string
-): CombinedGeminiResult {
-  const title = (parsed.rewrittenTitle || parsed.title || '').trim();
-  const body = parsed.rewrittenBody ?? parsed.content;
-  const content = Array.isArray(body) ? body.join('\n\n') : String(body || '').trim();
-  const excerpt = (parsed.excerpt || content).replace(/\s+/g, ' ').trim().slice(0, 160);
+function stripMarkdownFences(raw: string): string {
+  return raw.trim().replace(/^```(?:markdown|md)?\s*/i, '').replace(/\s*```$/, '');
+}
 
-  if (!title || !content) {
-    return { relevant: true, category, parseFailed: true, rewritten: null };
-  }
+function bodyFromMarkdown(raw: string): string {
+  let text = stripMarkdownFences(raw);
+  text = text.replace(/^#\s+.+\n+/, '');
+  return text.trim();
+}
 
-  const words = countWords(content);
-  if (words < MIN_REWRITE_WORDS) {
-    return { relevant: true, category, tooShort: words, rewritten: { title, excerpt, content } };
-  }
+async function writeArticleMarkdown(
+  source: NewsArticle,
+  title: string,
+  onRetry?: (attempt: number, error: Error) => void | Promise<void>
+): Promise<string> {
+  const prompt = `${WRITE_BRIEF}
 
-  return {
-    relevant: true,
-    category,
-    reason,
-    rewritten: { title, excerpt, content },
-  };
+Working title (do not repeat as an H1): ${title}
+
+${sourceBlock(source)}`;
+
+  const raw = await geminiGenerateText(prompt, { write: true, onRetry });
+  return bodyFromMarkdown(raw);
 }
 
 export async function classifyAndRewrite(
@@ -255,91 +255,87 @@ export async function classifyAndRewrite(
     ? config.categories
     : DEFAULT_CATEGORIES
   ).join(', ');
-  const extraGuide = (config.rewritePrompt || '').trim();
-  const rewriteGuide = extraGuide
-    ? `${DEFAULT_REWRITE_PROMPT}\n\nAdditional editor notes:\n${extraGuide}`
-    : DEFAULT_REWRITE_PROMPT;
 
-  const prompt = `Act as a senior Google SEO expert and news editor. Classify AND write a full article for The Humanist AI in one response.
-${jsonShapeBlock(categories)}
+  const classifyPrompt = `Classify this news item for The Humanist AI. Return ONLY JSON.
+{
+  "relevant": boolean,
+  "category": string,
+  "reason": string,
+  "rewrittenTitle": string,
+  "excerpt": string
+}
+relevant=true only if the story is about AI, technology, digital society, ethics, or human impact of tech.
+category MUST be one of: ${categories}.
+rewrittenTitle: SEO title, 50–65 characters, keyword near the front, max 90.
+excerpt: meta description, 140–160 characters.
+If relevant is false, leave rewrittenTitle and excerpt empty.
 
-${rewriteGuide}
+${sourceBlock(source)}`;
 
-HARD REQUIREMENT: if relevant is true, rewrittenBody MUST contain at least ${MIN_REWRITE_WORDS} English words (count them). A 150–300 word summary is a failed response. Do not mention that this is a rewrite.
+  const classifyRaw = await geminiGenerateText(classifyPrompt, { json: true, onRetry });
 
-SOURCE TITLE: ${source.title}
-SOURCE NAME: ${source.sourceName}
-SOURCE URL: ${source.url}
-SOURCE DESCRIPTION: ${source.description}
-SOURCE CONTENT: ${source.content}`;
-
-  const raw = await geminiGenerateText(prompt, onRetry);
-
-  let parsed: CombinedGeminiJson;
+  let classified: ClassifyJson;
   try {
-    parsed = parseGeminiJson<CombinedGeminiJson>(raw);
+    classified = parseGeminiJson<ClassifyJson>(classifyRaw);
   } catch {
     return {
       relevant: false,
       category: 'AI',
       parseFailed: true,
-      raw: raw.slice(0, 4000),
+      raw: classifyRaw.slice(0, 4000),
       rewritten: null,
     };
   }
 
-  const relevant = Boolean(parsed.relevant);
-  const category = String(parsed.category || 'AI').trim() || 'AI';
+  const relevant = Boolean(classified.relevant);
+  const category = String(classified.category || 'AI').trim() || 'AI';
   if (!relevant) {
-    return { relevant: false, category, reason: parsed.reason, rewritten: null };
+    return { relevant: false, category, reason: classified.reason, rewritten: null };
   }
 
-  let result = toRewritten(parsed, category, parsed.reason);
-  if (result.parseFailed) {
-    result.raw = raw.slice(0, 4000);
-    return result;
+  const title = (classified.rewrittenTitle || classified.title || source.title).trim();
+  const excerpt = (classified.excerpt || '').replace(/\s+/g, ' ').trim().slice(0, 160);
+  if (!title) {
+    return { relevant: true, category, parseFailed: true, raw: classifyRaw.slice(0, 2000), rewritten: null };
   }
 
-  if (result.tooShort && result.rewritten) {
-    const expandPrompt = `The previous draft was only ${result.tooShort} words. That fails Google SEO length. Expand it to at least ${MIN_REWRITE_WORDS} words (target 750–1000) without inventing facts.
-Keep the same story and JSON shape. rewrittenBody needs four or more ## sections and full paragraphs under each.
-${jsonShapeBlock(categories)}
-${rewriteGuide}
+  let content = await writeArticleMarkdown(source, title, onRetry);
+  let words = countWords(content);
 
-DRAFT TITLE: ${result.rewritten.title}
-DRAFT EXCERPT: ${result.rewritten.excerpt}
-DRAFT BODY: ${result.rewritten.content}
+  if (words < MIN_REWRITE_WORDS) {
+    const expandPrompt = `${WRITE_BRIEF}
 
-SOURCE TITLE: ${source.title}
-SOURCE CONTENT: ${source.content}`;
+The previous draft was only ${words} words. That is too short. Rewrite a FULL ${MIN_REWRITE_WORDS}–1200 word article on the same story. Do not copy the short draft. Output markdown body only.
 
-    const expandedRaw = await geminiGenerateText(expandPrompt, onRetry);
-    try {
-      const expanded = parseGeminiJson<CombinedGeminiJson>(expandedRaw);
-      result = toRewritten(expanded, category, expanded.reason);
-      if (result.parseFailed || result.tooShort) {
-        result.raw = expandedRaw.slice(0, 4000);
-      }
-    } catch {
-      return {
-        relevant: true,
-        category,
-        tooShort: result.tooShort,
-        raw: expandedRaw.slice(0, 4000),
-        rewritten: null,
-      };
-    }
+Working title: ${title}
+
+SHORT DRAFT (too short — expand, do not repeat as-is):
+${content}
+
+${sourceBlock(source)}`;
+
+    content = bodyFromMarkdown(await geminiGenerateText(expandPrompt, { write: true, onRetry }));
+    words = countWords(content);
   }
 
-  if (result.tooShort) {
+  if (words < MIN_REWRITE_WORDS) {
     return {
       relevant: true,
       category,
-      tooShort: result.tooShort,
-      raw: result.raw,
+      tooShort: words,
+      raw: content.slice(0, 4000),
       rewritten: null,
     };
   }
 
-  return result;
+  return {
+    relevant: true,
+    category,
+    reason: classified.reason,
+    rewritten: {
+      title,
+      excerpt: excerpt || content.replace(/\s+/g, ' ').trim().slice(0, 160),
+      content,
+    },
+  };
 }

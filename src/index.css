@@ -167,6 +167,16 @@
   .animate-scale-in {
     animation: scaleIn 0.4s ease-out forwards;
   }
+
+  .animate-logo-marquee {
+    animation: logoMarquee 40s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-logo-marquee {
+      animation: none;
+    }
+  }
 }
 
 @keyframes fadeIn {
@@ -197,5 +207,14 @@
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes logoMarquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
   }
 }

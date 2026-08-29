@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
+import SponsorsSection from "@/components/SponsorsSection";
 import FeaturedBlogs from "@/components/FeaturedBlogs";
 import FeaturedArticles from "@/components/FeaturedArticles";
 import TopNewsSection from "@/components/TopNewsSection";
@@ -14,6 +15,8 @@ const Index = () => {
       
       <main className="flex-1">
         <HeroSection />
+
+        <SponsorsSection />
 
         <FeaturedBlogs />
 

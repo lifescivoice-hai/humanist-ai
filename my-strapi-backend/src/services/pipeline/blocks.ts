@@ -4,6 +4,21 @@ type Block =
   | { type: 'paragraph'; children: BlockText[] }
   | { type: 'heading'; level: HeadingLevel; children: BlockText[] };
 
+const splitLongText = (text: string, max = 1200): string[] => {
+  if (text.length <= max) return [text];
+  const parts: string[] = [];
+  let rest = text;
+  while (rest.length > max) {
+    const window = rest.slice(0, max);
+    const cut = Math.max(window.lastIndexOf('. '), window.lastIndexOf('? '), window.lastIndexOf('! '));
+    const at = cut >= 400 ? cut + 1 : max;
+    parts.push(rest.slice(0, at).trim());
+    rest = rest.slice(at).trim();
+  }
+  if (rest) parts.push(rest);
+  return parts.filter(Boolean);
+};
+
 const stripMarkdown = (value: string): string =>
   value
     .replace(/\*\*(.*?)\*\*/g, '$1')
@@ -46,10 +61,13 @@ export function textToBlocks(text: string): Block[] {
         i += 1;
       }
       if (para.length) {
-        blocks.push({
-          type: 'paragraph',
-          children: [{ type: 'text', text: stripMarkdown(para.join(' ')) }],
-        });
+        const text = stripMarkdown(para.join(' '));
+        for (const piece of splitLongText(text, 1200)) {
+          blocks.push({
+            type: 'paragraph',
+            children: [{ type: 'text', text: piece }],
+          });
+        }
       }
     }
   }
