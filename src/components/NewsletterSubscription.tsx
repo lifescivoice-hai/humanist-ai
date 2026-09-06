@@ -9,6 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Mail } from "lucide-react";
+import { subscribeToNewsletter } from "@/services/newsletter";
 
 interface NewsletterSubscriptionProps {
   open: boolean;
@@ -19,35 +20,38 @@ const NewsletterSubscription = ({ open, onOpenChange }: NewsletterSubscriptionPr
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      setError("Enter a valid email address");
       return;
     }
 
     setIsSubmitting(true);
-
-    // Simulate API call (dummy implementation)
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setError(null);
+    try {
+      await subscribeToNewsletter(email);
       setIsSuccess(true);
       setEmail("");
-      
-      // Reset success message after 3 seconds and close dialog
       setTimeout(() => {
         setIsSuccess(false);
         onOpenChange(false);
       }, 3000);
-    }, 1000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not subscribe. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
     if (!isSubmitting) {
       setIsSuccess(false);
+      setError(null);
       setEmail("");
       onOpenChange(false);
     }
@@ -87,6 +91,7 @@ const NewsletterSubscription = ({ open, onOpenChange }: NewsletterSubscriptionPr
                 </div>
               </div>
               
+              {error && <p className="text-sm text-crimson">{error}</p>}
               <Button
                 type="submit"
                 variant="accent"
