@@ -26,5 +26,17 @@ export default {
       handler: 'api::health.health.newsletterSubscribe',
       config: { auth: false },
     },
+    {
+      method: 'GET',
+      path: '/newsletter/subscribe',
+      handler: 'api::health.health.newsletterInfo',
+      config: { auth: false },
+    },
+    {
+      method: 'POST',
+      path: '/newsletter/subscribe',
+      handler: 'api::health.health.newsletterSubscribe',
+      config: { auth: false },
+    },
   ],
 };
