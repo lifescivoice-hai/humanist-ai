@@ -7,6 +7,13 @@ type Ctx = {
 };
 
 export default {
+  info(ctx: { body: unknown }) {
+    ctx.body = {
+      ok: true,
+      message: 'Newsletter subscribe is live. Send POST with { "email": "you@example.com" }.',
+    };
+  },
+
   async subscribe(ctx: Ctx) {
     const raw = typeof ctx.request.body?.email === 'string' ? ctx.request.body.email.trim() : '';
     if (!isValidEmail(raw)) {

@@ -1,7 +1,7 @@
 import { API_URL } from '@/lib/api';
 
 export async function subscribeToNewsletter(email: string) {
-  const res = await fetch(`${API_URL}/newsletter/subscribe`, {
+  const res = await fetch(`${API_URL}/newsletter-subscribe`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
