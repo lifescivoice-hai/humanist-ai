@@ -13,7 +13,11 @@ export async function subscribeToNewsletter(email: string) {
   };
 
   if (!res.ok) {
-    throw new Error(json.error?.message || 'Could not subscribe. Please try again.');
+    const detail = json.error?.message;
+    if (res.status === 404 || res.status === 405) {
+      throw new Error('Newsletter API is not live on the server yet. Pull and restart Strapi.');
+    }
+    throw new Error(detail || `Could not subscribe (${res.status}).`);
   }
 
   return json.data;

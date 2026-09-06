@@ -1,7 +1,9 @@
-const BREVO_API = 'https://api.brevo.com/v3';
+import { BrevoClient } from '@getbrevo/brevo';
+
 const DEFAULT_LIST_NAME = 'The Humanist AI Newsletter';
 
 let cachedListId: number | null = null;
+let cachedClient: BrevoClient | null = null;
 
 function apiKey() {
   const key = (process.env.BREVO_API_KEY || '').trim();
@@ -15,46 +17,40 @@ function listName() {
   return (process.env.BREVO_LIST_NAME || '').trim() || DEFAULT_LIST_NAME;
 }
 
-async function brevoFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${BREVO_API}${path}`, {
-    ...init,
-    headers: {
-      accept: 'application/json',
-      'content-type': 'application/json',
-      'api-key': apiKey(),
-      ...(init.headers || {}),
-    },
-  });
-  const text = await res.text();
-  const body = text ? (JSON.parse(text) as T & { message?: string }) : ({} as T);
-  if (!res.ok) {
-    const message = (body as { message?: string }).message || text.slice(0, 240) || `HTTP ${res.status}`;
-    throw new Error(message);
+function client() {
+  if (!cachedClient) {
+    cachedClient = new BrevoClient({ apiKey: apiKey() });
   }
-  return body;
+  return cachedClient;
+}
+
+function sdkMessage(err: unknown) {
+  if (err && typeof err === 'object' && 'body' in err) {
+    const body = (err as { body?: { message?: string } }).body;
+    if (body?.message) return body.message;
+  }
+  return err instanceof Error ? err.message : 'Brevo request failed';
 }
 
 async function resolveFolderId(): Promise<number> {
-  const data = await brevoFetch<{ folders?: Array<{ id?: number }> }>('/contacts/folders?limit=50');
-  const existing = data.folders?.find((folder) => folder.id);
+  const folders = await client().contacts.getFolders({ limit: 50 });
+  const existing = folders.folders?.find((folder) => folder.id);
   if (existing?.id) return existing.id;
 
-  const created = await brevoFetch<{ id: number }>('/contacts/folders', {
-    method: 'POST',
-    body: JSON.stringify({ name: 'The Humanist AI' }),
-  });
+  const created = await client().contacts.createFolder({ name: 'The Humanist AI' });
+  if (!created.id) {
+    throw new Error('Brevo did not return a folder id');
+  }
   return created.id;
 }
 
 async function findListId(name: string): Promise<number | null> {
   let offset = 0;
   for (let page = 0; page < 10; page += 1) {
-    const data = await brevoFetch<{ lists?: Array<{ id?: number; name?: string }>; count?: number }>(
-      `/contacts/lists?limit=50&offset=${offset}`
-    );
+    const data = await client().contacts.getLists({ limit: 50, offset });
     const match = data.lists?.find((list) => list.name === name && list.id);
     if (match?.id) return match.id;
-    if (!data.lists?.length || (data.lists.length < 50)) break;
+    if (!data.lists?.length || data.lists.length < 50) break;
     offset += 50;
   }
   return null;
@@ -76,25 +72,26 @@ export async function ensureNewsletterListId(): Promise<number> {
   }
 
   const folderId = await resolveFolderId();
-  const created = await brevoFetch<{ id: number }>('/contacts/lists', {
-    method: 'POST',
-    body: JSON.stringify({ name, folderId }),
-  });
+  const created = await client().contacts.createList({ name, folderId });
+  if (!created.id) {
+    throw new Error('Brevo did not return a list id');
+  }
   cachedListId = created.id;
   return created.id;
 }
 
 export async function addSubscriber(email: string) {
-  const listId = await ensureNewsletterListId();
-  await brevoFetch('/contacts', {
-    method: 'POST',
-    body: JSON.stringify({
+  try {
+    const listId = await ensureNewsletterListId();
+    await client().contacts.createContact({
       email,
       listIds: [listId],
       updateEnabled: true,
-    }),
-  });
-  return { listId };
+    });
+    return { listId };
+  } catch (err) {
+    throw new Error(sdkMessage(err));
+  }
 }
 
 export function isValidEmail(value: string) {

@@ -18,8 +18,8 @@ export default {
       ctx.body = { data: { subscribed: true, listId } };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Subscribe failed';
+      (ctx as { status?: number }).status = /BREVO_API_KEY/i.test(message) ? 503 : 502;
       ctx.body = { error: { message } };
-      (ctx as { status?: number }).status = 502;
     }
   },
 };
