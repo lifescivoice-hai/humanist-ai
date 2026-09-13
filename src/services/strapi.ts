@@ -43,6 +43,8 @@ interface ArticleAttributes {
   category?: string;
   categories?: StrapiCategory[] | { data?: StrapiCategory[] };
   author: string;
+  /** Editorial date set in Article Information (does not change on save/re-publish). */
+  published?: string;
   publishedAt: string;
   readTime: number;
   featuredImage?: {
@@ -68,6 +70,7 @@ interface Article {
   category?: string;
   categories?: ArticleAttributes['categories'];
   author?: string;
+  published?: string;
   publishedAt?: string;
   readTime?: number;
   featuredImage?: ArticleAttributes['featuredImage'];
@@ -279,7 +282,7 @@ export const transformArticle = (article: Article) => {
     content: content,
     category: categoryLabel,
     author: attrs.author || '',
-    date: formatStrapiDate(attrs.publishedAt || ''),
+    date: formatStrapiDate(attrs.published || attrs.publishedAt || ''),
     readTime: `${attrs.readTime ?? 5} min read`,
     featuredImage: featuredImageUrl,
   };

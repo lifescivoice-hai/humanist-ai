@@ -57,7 +57,17 @@ export const getStrapiImageUrl = (image: any): string | null => {
 // Helper to format Strapi date
 export const formatStrapiDate = (dateString: string): string => {
   if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('en-US', {
+
+  // Date-only fields (YYYY-MM-DD) must be parsed as local calendar dates.
+  // `new Date('2026-08-31')` is UTC midnight and can shift a day in some timezones.
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+  const date = dateOnly
+    ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+    : new Date(dateString);
+
+  if (Number.isNaN(date.getTime())) return '';
+
+  return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
