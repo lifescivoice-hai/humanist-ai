@@ -61,13 +61,6 @@ const HeroSection = () => {
   return (
     <section className="bg-secondary/60">
       <div className="section-container py-8 lg:py-12">
-        <div className="flex items-baseline justify-between gap-4 mb-6">
-          <p className="section-kicker mb-0">Today</p>
-          <p className="hidden md:block text-[13px] text-muted-foreground">
-            Human relevance in the algorithmic age
-          </p>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-7">
           <div className="lg:col-span-7">
             <BorderGlow className="h-full min-h-[320px] lg:min-h-[440px] border-glow-fill border-glow-media" {...mediaGlow}>
