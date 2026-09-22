@@ -1,7 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Clock, Calendar, User, ArrowRight } from "lucide-react";
 import { useArticleBySlug, useLatestArticles } from "@/hooks/useArticles";
@@ -92,7 +91,7 @@ const Post = () => {
             <article>
               {/* Contained featured image – card with accent border */}
               {post.featuredImage && (
-                <div className="rounded-xl overflow-hidden border border-border shadow-card mb-8 border-l-4 border-l-crimson">
+                <div className="overflow-hidden border border-border mb-8">
                   <div className="aspect-[16/10] md:aspect-[2/1] bg-muted">
                     <img
                       src={post.featuredImage}
@@ -104,10 +103,8 @@ const Post = () => {
               )}
 
               {/* Title & excerpt */}
-              <Badge className="bg-crimson text-accent-foreground border-none mb-4">
-                {post.category}
-              </Badge>
-              <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-3">
+              <p className="section-kicker">{post.category}</p>
+              <h1 className="font-display text-3xl md:text-5xl font-semibold text-foreground mb-3 leading-tight">
                 {post.title}
               </h1>
               <p className="text-muted-foreground text-lg mb-6 border-b border-border pb-6">
@@ -133,7 +130,7 @@ const Post = () => {
               {/* Prose content */}
               {post.content && (
                 <div
-                  className="prose prose-lg max-w-none prose-headings:font-display prose-headings:text-foreground prose-headings:font-semibold prose-p:text-muted-foreground prose-p:leading-relaxed prose-a:text-crimson prose-a:no-underline hover:prose-a:underline prose-strong:text-foreground"
+                  className="prose prose-lg max-w-none prose-headings:font-display prose-headings:text-foreground prose-headings:font-semibold prose-p:text-foreground/80 prose-p:leading-relaxed prose-p:font-serif prose-a:text-crimson prose-a:no-underline hover:prose-a:underline prose-strong:text-foreground"
                   dangerouslySetInnerHTML={{ __html: post.content.trim() }}
                 />
               )}
@@ -142,12 +139,10 @@ const Post = () => {
             {/* Sidebar */}
             <aside className="lg:pt-0 space-y-8">
               {/* Latest Articles */}
-              <div className="rounded-xl bg-card border border-border shadow-card p-6">
-                <div className="inline-block px-3 py-1 bg-navy text-white text-xs font-medium uppercase tracking-wider rounded mb-4">
-                  Latest
-                </div>
+              <div className="bg-card border border-border p-6">
+                <p className="section-kicker">Continue</p>
                 <h2 className="font-display text-xl font-semibold text-foreground mb-4">
-                  Latest Articles
+                  More from the journal
                 </h2>
                 <ul className="space-y-4">
                   {latestArticles.map((article) => (

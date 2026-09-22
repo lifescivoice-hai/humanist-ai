@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   fetchArticleById,
@@ -11,6 +11,7 @@ import {
   fetchMenuItems,
   searchArticles,
 } from '@/services/strapi';
+import { assignHomepageSections, HOMEPAGE_ARTICLE_POOL } from '@/lib/homepageLayout';
 
 // Hook to fetch single article by ID
 export const useArticle = (id: string | undefined) => {
@@ -106,6 +107,23 @@ export const useHomepage = () => {
     queryFn: fetchHomepage,
     staleTime: 2 * 60 * 1000,
   });
+};
+
+/**
+ * Automatically split the newest articles across homepage rails so Featured,
+ * Latest, and Top 5 do not repeat the same headlines.
+ */
+export const useHomepageSections = () => {
+  const query = useLatestArticles(HOMEPAGE_ARTICLE_POOL);
+  const sections = useMemo(
+    () => assignHomepageSections(query.data ?? []),
+    [query.data]
+  );
+
+  return {
+    ...query,
+    ...sections,
+  };
 };
 
 export const useMenuItems = (location: 'header' | 'footer' | 'both' = 'header') => {

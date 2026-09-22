@@ -3,47 +3,52 @@ import heroBg from "@/assets/hero-bg.jpg";
 import blog1 from "@/assets/blog-1.jpg";
 import blog2 from "@/assets/blog-2.jpg";
 import blog3 from "@/assets/blog-3.jpg";
-import { Badge } from "@/components/ui/badge";
-import { useHomepage, useLatestArticles, useCategories } from "@/hooks/useArticles";
+import { useHomepageSections, useCategories } from "@/hooks/useArticles";
 import { Skeleton } from "@/components/ui/skeleton";
+import BorderGlow, { BRAND_GLOW_COLORS } from "@/components/BorderGlow";
 
 const FALLBACK_IMAGES = [heroBg, blog1, blog2, blog3];
 
-const pickImage = (url: string | null, index: number) =>
+const pickImage = (url: string | null | undefined, index: number) =>
   url || FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
 
-const HeroSection = () => {
-  // Curated picks from the homepage single type; fall back to latest if empty.
-  const { data: homepage, isLoading: homepageLoading, isError: homepageError } = useHomepage();
-  const curated = homepage?.heroArticles ?? [];
-  const fallbackEnabled = !homepageLoading && !homepageError && curated.length === 0;
-  const { data: latest = [], isLoading: latestLoading, isError: latestError } = useLatestArticles(
-    fallbackEnabled ? 7 : 0
-  );
-  const articles = curated.length > 0 ? curated : latest;
-  const isLoading = homepageLoading || (fallbackEnabled && latestLoading);
-  const isError = homepageError && latestError;
+const mediaGlow = {
+  glowColor: "356 78 58",
+  backgroundColor: "#1B2A61",
+  colors: [...BRAND_GLOW_COLORS],
+  borderRadius: 28,
+  glowRadius: 28,
+  glowIntensity: 1.15,
+  coneSpread: 22,
+  edgeSensitivity: 22,
+  fillOpacity: 0.35,
+};
 
+const lightGlow = {
+  glowColor: "228 58 42",
+  backgroundColor: "#ffffff",
+  colors: [...BRAND_GLOW_COLORS],
+  borderRadius: 16,
+  glowRadius: 24,
+  glowIntensity: 0.95,
+  coneSpread: 22,
+  edgeSensitivity: 24,
+  fillOpacity: 0.28,
+};
+
+const HeroSection = () => {
+  const { hero: articles, isLoading, isError } = useHomepageSections();
   const { data: categories = [] } = useCategories(12);
 
-  const [featured, ...rest] = articles.slice(0, 7);
+  const [featured, ...rest] = articles;
   const sideArticles = rest.slice(0, 2);
-  /** Remaining up to 3 cards in the bottom row (1 featured + 2 side + 3 bottom = 6) */
   const bottomArticles = rest.slice(2, 6);
-  const fallbackTrending = [
-    "AI Ethics",
-    "Leadership",
-    "Future of Work",
-    "Digital Strategy",
-    "HR Tech",
-    "Automation",
-  ];
 
   if (isLoading && !featured) {
     return (
-      <section className="bg-navy">
-        <div className="section-container py-6 lg:py-10">
-          <Skeleton className="h-[300px] lg:h-[400px] w-full rounded-xl bg-white/10" />
+      <section className="bg-secondary/60">
+        <div className="section-container py-8 lg:py-12">
+          <Skeleton className="h-[320px] lg:h-[420px] w-full rounded-2xl" />
         </div>
       </section>
     );
@@ -54,115 +59,103 @@ const HeroSection = () => {
   }
 
   return (
-    <section className="bg-navy">
-      <div className="section-container py-6 lg:py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+    <section className="bg-secondary/60">
+      <div className="section-container py-8 lg:py-12">
+        <div className="flex items-baseline justify-between gap-4 mb-6">
+          <p className="section-kicker mb-0">Today</p>
+          <p className="hidden md:block text-[13px] text-muted-foreground">
+            Human relevance in the algorithmic age
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-7">
           <div className="lg:col-span-7">
-            <Link to={`/articles/${featured.slug}`} className="group block cursor-pointer h-full">
-              <div className="relative h-full min-h-[300px] lg:min-h-[400px] overflow-hidden rounded-xl">
+            <BorderGlow className="h-full min-h-[320px] lg:min-h-[440px] border-glow-fill border-glow-media" {...mediaGlow}>
+              <Link to={`/articles/${featured.slug}`} className="group relative block h-full min-h-[320px] lg:min-h-[440px] overflow-hidden rounded-[inherit]">
                 <img
                   src={pickImage(featured.featuredImage, 0)}
                   alt={featured.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/50 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8">
-                  <Badge className="mb-3 bg-crimson text-white border-none hover:bg-crimson/90">
-                    {featured.category}
-                  </Badge>
-                  <h1 className="font-display text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight mb-3 group-hover:text-crimson transition-colors">
+                <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/35 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
+                  <p className="section-kicker text-crimson-light">{featured.category}</p>
+                  <h1 className="font-display text-lg md:text-xl lg:text-2xl font-semibold text-white leading-snug mb-2 group-hover:text-crimson-light transition-colors">
                     {featured.title}
                   </h1>
-                  <p className="text-white/70 text-sm md:text-base leading-relaxed line-clamp-2 mb-3 hidden md:block">
+                  <p className="text-white/75 text-xs md:text-sm leading-relaxed line-clamp-2 mb-2 hidden md:block">
                     {featured.excerpt}
                   </p>
-                  <div className="flex items-center gap-3 text-xs md:text-sm text-white/60">
-                    <span className="font-medium text-white/80">{featured.author}</span>
-                    <span className="w-1 h-1 rounded-full bg-white/40" />
+                  <div className="flex items-center gap-3 text-[11px] text-white/70">
+                    <span className="text-white">{featured.author}</span>
+                    <span aria-hidden>·</span>
+                    <span>{featured.date}</span>
+                    <span aria-hidden>·</span>
                     <span>{featured.readTime}</span>
                   </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </BorderGlow>
           </div>
 
-          <div className="lg:col-span-5 grid grid-cols-2 lg:grid-cols-1 gap-4">
+          <div className="lg:col-span-5 grid grid-cols-2 lg:grid-cols-1 gap-6">
             {sideArticles.map((article, index) => (
-              <Link
+              <BorderGlow
                 key={article.id}
-                to={`/articles/${article.slug}`}
-                className="group cursor-pointer relative overflow-hidden rounded-xl block"
+                className="h-full min-h-[150px] lg:min-h-[200px] border-glow-fill border-glow-media"
+                {...mediaGlow}
               >
-                <div className="relative h-full min-h-[160px] lg:min-h-[190px]">
+                <Link
+                  to={`/articles/${article.slug}`}
+                  className="group relative block h-full min-h-[150px] lg:min-h-[200px] overflow-hidden rounded-[inherit]"
+                >
                   <img
                     src={pickImage(article.featuredImage, index + 1)}
                     alt={article.title}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/50 to-navy/20" />
-                  <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
-                    <Badge
-                      variant="outline"
-                      className="mb-2 text-xs border-white/30 text-white bg-white/10 backdrop-blur-sm"
-                    >
-                      {article.category}
-                    </Badge>
-                    <h2 className="font-display text-sm md:text-base lg:text-lg font-semibold text-white leading-snug group-hover:text-crimson transition-colors line-clamp-2">
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/30 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
+                    <p className="section-kicker text-crimson-light mb-1">{article.category}</p>
+                    <h2 className="font-display text-xs md:text-sm font-semibold text-white leading-snug group-hover:text-crimson-light transition-colors line-clamp-2">
                       {article.title}
                     </h2>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </BorderGlow>
             ))}
           </div>
         </div>
 
         {bottomArticles.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 lg:mt-6">
-            {bottomArticles.map((article, index) => (
-              <Link
-                key={article.id}
-                to={`/articles/${article.slug}`}
-                className="group cursor-pointer bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all block"
-              >
-                <Badge variant="outline" className="mb-2 text-xs border-crimson/50 text-crimson">
-                  {article.category}
-                </Badge>
-                <h3 className="font-display text-sm md:text-base font-semibold text-white leading-snug group-hover:text-crimson transition-colors line-clamp-2 mb-2">
-                  {article.title}
-                </h3>
-                <div className="flex items-center gap-2 text-xs text-white/50">
-                  <span className="font-medium text-white/70 truncate">{article.author}</span>
-                </div>
-              </Link>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-8">
+            {bottomArticles.map((article) => (
+              <BorderGlow key={article.id} className="h-full border-glow-fill" {...lightGlow}>
+                <Link to={`/articles/${article.slug}`} className="group block p-5 h-full">
+                  <p className="section-kicker">{article.category}</p>
+                  <h3 className="font-display text-base md:text-lg font-semibold text-foreground leading-snug group-hover:text-crimson transition-colors line-clamp-3 mb-2">
+                    {article.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">{article.author}</p>
+                </Link>
+              </BorderGlow>
             ))}
           </div>
         )}
 
-        <div className="mt-6 pt-5 border-t border-white/10 flex flex-wrap items-center gap-3">
-          <span className="text-xs font-medium text-white/50 uppercase tracking-wider mr-2">
-            Trending:
+        <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <span className="text-xs font-semibold text-navy/50">
+            Browse
           </span>
-          {categories.length > 0
-            ? categories.slice(0, 8).map((c) => (
-                <Link key={c.id} to={`/categories/${c.slug}`} className="inline-block">
-                  <Badge
-                    variant="outline"
-                    className="cursor-pointer border-white/20 text-white/70 hover:bg-crimson hover:border-crimson hover:text-white transition-all text-xs"
-                  >
-                    {c.name}
-                  </Badge>
-                </Link>
-              ))
-            : fallbackTrending.map((topic) => (
-                <Badge
-                  key={topic}
-                  variant="outline"
-                  className="cursor-default border-white/20 text-white/70 text-xs"
-                >
-                  {topic}
-                </Badge>
-              ))}
+          {categories.slice(0, 8).map((category) => (
+            <Link
+              key={category.id}
+              to={`/categories/${category.slug}`}
+              className="rounded-full bg-card px-3 py-1 text-[13px] text-navy hover:bg-crimson hover:text-white transition-colors"
+            >
+              {category.name}
+            </Link>
+          ))}
         </div>
       </div>
     </section>
