@@ -51,7 +51,7 @@ const Footer = () => {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-primary-foreground/10 flex items-center justify-center hover:bg-crimson transition-colors"
+                  className="w-9 h-9 rounded-full bg-primary-foreground/10 flex items-center justify-center hover:bg-crimson transition-colors"
                   aria-label={social.label}
                 >
                   <social.icon className="w-4 h-4" />
@@ -117,7 +117,7 @@ const Footer = () => {
             © 2026 The Humanist AI. All rights reserved.
           </p>
           <p className="text-sm text-primary-foreground/60">
-            Made with purpose for the human-AI future.
+            A journal of human relevance in the algorithmic age.
           </p>
         </div>
       </div>

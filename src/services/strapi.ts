@@ -283,6 +283,7 @@ export const transformArticle = (article: Article) => {
     category: categoryLabel,
     author: attrs.author || '',
     date: formatStrapiDate(attrs.published || attrs.publishedAt || ''),
+    publishedOn: attrs.published || attrs.publishedAt || '',
     readTime: `${attrs.readTime ?? 5} min read`,
     featuredImage: featuredImageUrl,
   };

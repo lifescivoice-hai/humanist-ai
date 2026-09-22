@@ -21,15 +21,13 @@ const Blogs = () => {
       <main className="flex-1">
         <section className="py-12 md:py-16 bg-background">
           <div className="section-container">
-            <div className="mb-10">
-              <div className="inline-block px-3 py-1 bg-crimson text-white text-xs font-medium uppercase tracking-wider rounded mb-3">
-                All Posts
-              </div>
-              <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">
-                Latest Blogs
+            <div className="mb-10 pb-4 border-b border-border">
+              <p className="section-kicker">The Briefing</p>
+              <h1 className="font-display text-3xl md:text-4xl font-semibold text-foreground">
+                Latest
               </h1>
               <p className="text-muted-foreground mt-2">
-                Fresh perspectives for the algorithmic age
+                New reporting and commentary
               </p>
             </div>
 
@@ -53,7 +51,7 @@ const Blogs = () => {
                   <Link
                     key={blog.id}
                     to={`/articles/${blog.slug}`}
-                    className="group block overflow-hidden rounded-xl bg-card shadow-card hover:shadow-hover transition-all duration-300"
+                    className="group block overflow-hidden bg-card border border-border hover:border-foreground/25 transition-colors"
                   >
                     <div className="relative overflow-hidden aspect-video">
                       <img

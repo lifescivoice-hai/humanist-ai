@@ -41,16 +41,17 @@ const Header = () => {
   const resolvedNavItems = navItems.length > 0 ? navItems : fallbackNavItems;
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
+      <div className="h-0.5 bg-crimson" aria-hidden />
       <div className="section-container">
-        <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center">
-            <img src={logo} alt="The Humanist AI" className="h-8 md:h-10" />
+        <div className="flex h-[4.25rem] items-center justify-between">
+          <Link to="/" className="flex items-center gap-3">
+            <img src={logo} alt="The Humanist AI" className="h-8 md:h-9" />
           </Link>
 
           {/* Desktop Navigation */}
           <nav
-            className="hidden md:flex items-center gap-8"
+            className="hidden md:flex items-center gap-7"
             aria-busy={isMenuPending}
             aria-label="Main navigation"
           >
@@ -69,7 +70,7 @@ const Header = () => {
                 <Link
                   key={`${item.label}-${item.href}`}
                   to={item.href}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-sm font-medium text-navy/70 hover:text-navy transition-colors"
                 >
                   {item.label}
                 </Link>
@@ -134,7 +135,7 @@ const Header = () => {
                   <Link
                     key={`${item.label}-${item.href}`}
                     to={item.href}
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-sm font-medium text-navy/70 hover:text-navy transition-colors"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.label}

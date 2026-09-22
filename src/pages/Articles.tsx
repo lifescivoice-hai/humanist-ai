@@ -14,17 +14,15 @@ const Articles = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        <section className="py-12 md:py-16 bg-secondary/30 border-l-4 border-navy">
+        <section className="py-12 md:py-16">
           <div className="section-container">
-            <div className="mb-10">
-              <div className="inline-block px-3 py-1 bg-navy text-white text-xs font-medium uppercase tracking-wider rounded mb-3">
-                Deep Dives
-              </div>
-              <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">
-                Featured Articles
+            <div className="mb-10 pb-4 border-b border-border">
+              <p className="section-kicker">Essays</p>
+              <h1 className="font-display text-3xl md:text-4xl font-semibold text-foreground">
+                Articles
               </h1>
               <p className="text-muted-foreground mt-2">
-                In-depth analysis and thought leadership
+                Analysis and argument on human relevance in the algorithmic age
               </p>
             </div>
 
@@ -48,7 +46,7 @@ const Articles = () => {
                   <Link
                     key={article.id}
                     to={`/articles/${article.slug}`}
-                    className="group block p-6 rounded-xl bg-card border border-border hover:border-crimson/30 hover:shadow-hover transition-all duration-300"
+                    className="group block p-6 bg-card border border-border hover:border-foreground/25 transition-colors"
                   >
                     <div className="flex items-center gap-3 mb-4">
                       <Badge variant="outline" className="text-crimson border-crimson/30">

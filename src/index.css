@@ -2,61 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,500&display=swap');
 
 @layer base {
   :root {
-    /* Core brand colors from logo */
-    --navy: 230 35% 25%;
-    --navy-light: 230 30% 35%;
-    --navy-dark: 230 40% 18%;
-    --crimson: 0 65% 53%;
-    --crimson-light: 0 60% 60%;
-    --crimson-dark: 0 70% 45%;
+    /* Logo colors: navy wordmark + red mark */
+    --navy: 228 58% 24%;
+    --navy-light: 228 48% 34%;
+    --navy-dark: 228 62% 16%;
+    --crimson: 356 78% 48%;
+    --crimson-light: 356 80% 58%;
+    --crimson-dark: 356 80% 40%;
     
     /* Semantic tokens */
-    --background: 0 0% 100%;
-    --foreground: 230 35% 25%;
+    --background: 220 40% 99%;
+    --foreground: 228 45% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 230 35% 25%;
+    --card-foreground: 228 45% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 230 35% 25%;
+    --popover-foreground: 228 45% 18%;
 
-    --primary: 230 35% 25%;
+    --primary: 228 58% 24%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 230 15% 95%;
-    --secondary-foreground: 230 35% 25%;
+    --secondary: 228 40% 96%;
+    --secondary-foreground: 228 45% 18%;
 
-    --muted: 230 15% 96%;
-    --muted-foreground: 230 15% 45%;
+    --muted: 228 28% 95%;
+    --muted-foreground: 228 14% 40%;
 
-    --accent: 0 65% 53%;
+    --accent: 356 78% 48%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 42%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 230 20% 90%;
-    --input: 230 20% 90%;
-    --ring: 0 65% 53%;
+    --border: 228 20% 88%;
+    --input: 228 20% 88%;
+    --ring: 228 58% 24%;
 
-    --radius: 0.5rem;
+    --radius: 0.85rem;
 
     /* Custom gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(230 35% 25%) 0%, hsl(230 40% 18%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(0 65% 53%) 0%, hsl(0 70% 45%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(230 15% 98%) 100%);
+    --gradient-hero: linear-gradient(160deg, hsl(228 58% 24%) 0%, hsl(228 62% 16%) 100%);
+    --gradient-accent: linear-gradient(160deg, hsl(356 78% 48%) 0%, hsl(356 80% 40%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(228 40% 98%) 100%);
     
     /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(230 35% 25% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(230 35% 25% / 0.1), 0 2px 4px -2px hsl(230 35% 25% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(230 35% 25% / 0.1), 0 4px 6px -4px hsl(230 35% 25% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(230 35% 25% / 0.1), 0 8px 10px -6px hsl(230 35% 25% / 0.1);
-    --shadow-card: 0 4px 20px -2px hsl(230 35% 25% / 0.08);
-    --shadow-hover: 0 10px 40px -10px hsl(230 35% 25% / 0.15);
+    --shadow-sm: 0 1px 2px 0 hsl(228 58% 24% / 0.05);
+    --shadow-md: 0 6px 16px -8px hsl(228 58% 24% / 0.14);
+    --shadow-lg: 0 16px 32px -18px hsl(228 58% 24% / 0.2);
+    --shadow-xl: 0 22px 40px -20px hsl(228 58% 24% / 0.24);
+    --shadow-card: 0 8px 24px -16px hsl(228 58% 24% / 0.16);
+    --shadow-hover: 0 18px 36px -18px hsl(228 58% 24% / 0.22);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -69,7 +69,7 @@
   }
 
   .dark {
-    --background: 230 40% 10%;
+    --background: 228 50% 10%;
     --foreground: 0 0% 98%;
 
     --card: 230 35% 15%;
@@ -115,11 +115,12 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Manrope', sans-serif;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Source Serif 4', Georgia, serif;
+    letter-spacing: -0.025em;
   }
 }
 
@@ -146,12 +147,16 @@
   }
   
   .ad-placeholder {
-    @apply bg-secondary border-2 border-dashed border-border rounded-lg flex items-center justify-center;
+    @apply bg-secondary border border-dashed border-border flex items-center justify-center;
     min-height: 90px;
   }
   
   .section-container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-kicker {
+    @apply text-[12px] font-semibold tracking-[0.04em] text-crimson mb-2;
   }
 }
 

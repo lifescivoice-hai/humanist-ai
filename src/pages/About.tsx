@@ -14,10 +14,8 @@ const About = () => {
         <section className="bg-navy text-primary-foreground">
           <div className="section-container py-12 md:py-16 lg:py-20">
             <div className="max-w-4xl mx-auto text-center">
-              <Badge className="bg-crimson text-white border-none mb-6">
-                About Us
-              </Badge>
-              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+              <p className="section-kicker text-crimson-light">About</p>
+              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-semibold mb-6">
                 The Humanist AI
               </h1>
               <p className="text-lg md:text-xl text-primary-foreground/80 leading-relaxed">

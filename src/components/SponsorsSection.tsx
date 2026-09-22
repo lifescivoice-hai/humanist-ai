@@ -47,11 +47,12 @@ const SponsorsSection = () => {
   const loop = [...SPONSORS, ...SPONSORS];
 
   return (
-    <section className="py-12 md:py-16 bg-secondary/40 border-y border-border" aria-label="Our Corporate Partners">
+    <section className="py-10 md:py-12 bg-secondary/50 border-y border-border" aria-label="Our Corporate Partners">
       <div className="section-container">
-        <div className="text-center mb-8 md:mb-10">
-          <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground">
-            Our Corporate Partners
+        <div className="mb-8">
+          <p className="section-kicker text-center">Institutional readers</p>
+          <h2 className="font-display text-xl md:text-2xl font-semibold text-foreground text-center">
+            Read across the organizations shaping the work
           </h2>
         </div>
       </div>

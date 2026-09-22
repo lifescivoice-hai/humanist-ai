@@ -1,109 +1,74 @@
-import { TrendingUp, ExternalLink } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useHomepage, useLatestArticles } from "@/hooks/useArticles";
-import { Badge } from "@/components/ui/badge";
+import { useHomepageSections } from "@/hooks/useArticles";
 import { Skeleton } from "@/components/ui/skeleton";
+import SectionHeader from "@/components/SectionHeader";
 
 const TopNewsSection = () => {
-  // Curated picks from the Homepage single type; if either field is empty,
-  // fall back to the most recent articles so the section never goes blank.
-  const { data: homepage, isLoading: homepageLoading } = useHomepage();
-  const curatedTop = homepage?.weeklyTopArticles ?? [];
-  const curatedTitles = homepage?.weeklyTopTitles ?? [];
-  const needsFallback =
-    !homepageLoading && (curatedTop.length === 0 || curatedTitles.length === 0);
-  const { data: latestArticles = [], isLoading: latestLoading } = useLatestArticles(
-    needsFallback ? 5 : 0
-  );
-  const isLoading = homepageLoading || (needsFallback && latestLoading);
-
-  const weeklyTop = (curatedTop.length > 0 ? curatedTop : latestArticles).slice(0, 3);
-  const weeklyTopTitles = (curatedTitles.length > 0 ? curatedTitles : latestArticles).slice(0, 5);
+  const { topFive, isLoading } = useHomepageSections();
 
   return (
-    <section className="py-16 bg-navy">
+    <section className="py-16 md:py-20 bg-secondary/70">
       <div className="section-container">
-        <div className="flex items-center justify-between mb-10">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-crimson">
-              <TrendingUp className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-white">
-                Top 5 This Week
-              </h2>
-              <p className="text-white/60 mt-1">The AI news that matters most</p>
-            </div>
-          </div>
-          <Link 
-            to="/news" 
-            className="text-crimson font-medium hover:text-white transition-colors hidden md:block"
-          >
-            All News →
-          </Link>
-        </div>
+        <SectionHeader
+          kicker="This week"
+          title="Five to watch"
+          description="The stories published this week, excluding pieces already on the front page and in Latest."
+          action={
+            <Link
+              to="/articles"
+              className="hidden md:inline-flex items-center gap-1 text-sm font-semibold text-navy hover:text-crimson"
+            >
+              All coverage
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          }
+        />
 
         {isLoading ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[1, 2, 3].map((k) => (
-                <Skeleton key={k} className="h-36 rounded-xl bg-white/10" />
-              ))}
-            </div>
-            <Skeleton className="h-64 rounded-xl bg-white/10" />
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((k) => (
+              <Skeleton key={k} className="h-20 rounded-2xl" />
+            ))}
           </div>
         ) : (
-          <>
-            {/* Weekly Top (3) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              {weeklyTop.map((article) => (
+          <ol className="grid gap-3">
+            {topFive.map((article, index) => (
+              <li key={article.id}>
                 <Link
-                  key={article.id}
                   to={`/articles/${article.slug}`}
-                  className="group block bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4 hover:bg-white/10 transition-colors"
+                  className="group grid grid-cols-[3.25rem_1fr] md:grid-cols-[4.25rem_1fr_auto] gap-4 md:gap-6 items-center rounded-2xl bg-card px-4 py-4 md:px-6 shadow-card hover:shadow-hover transition-shadow"
                 >
-                  <Badge variant="outline" className="mb-2 border-crimson/60 text-crimson">
-                    {article.category}
-                  </Badge>
-                  <h3 className="font-medium text-white group-hover:text-crimson transition-colors line-clamp-2">
-                    {article.title}
-                  </h3>
-                  <p className="text-xs text-white/50 mt-2">{article.date}</p>
-                </Link>
-              ))}
-            </div>
-
-            {/* Weekly Top Titles (latest 5) */}
-            <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 divide-y divide-white/10">
-              {weeklyTopTitles.map((article, index) => (
-                <Link
-                  key={article.id}
-                  to={`/articles/${article.slug}`}
-                  className="group flex items-start gap-4 p-4 hover:bg-white/5 transition-colors"
-                >
-                  <span className="font-display text-3xl font-bold text-crimson/50 group-hover:text-crimson transition-colors">
+                  <span className="font-display text-2xl md:text-3xl text-crimson">
                     {String(index + 1).padStart(2, "0")}
                   </span>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-white group-hover:text-crimson transition-colors line-clamp-2">
+                  <div className="min-w-0">
+                    <p className="section-kicker mb-1">{article.category}</p>
+                    <h3 className="font-display text-lg md:text-xl font-semibold text-foreground group-hover:text-crimson transition-colors leading-snug">
                       {article.title}
                     </h3>
-                    <p className="text-sm text-white/50 mt-1 flex items-center gap-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       {article.author}
-                      <ExternalLink className="w-3 h-3" />
+                      <span className="mx-2" aria-hidden>
+                        ·
+                      </span>
+                      {article.date}
                     </p>
                   </div>
+                  <span className="hidden md:block text-xs text-muted-foreground">
+                    {article.readTime}
+                  </span>
                 </Link>
-              ))}
-            </div>
-          </>
+              </li>
+            ))}
+          </ol>
         )}
 
-        <Link 
-          to="/news" 
-          className="text-crimson font-medium hover:text-white transition-colors mt-6 block md:hidden text-center"
+        <Link
+          to="/articles"
+          className="text-navy font-semibold hover:text-crimson mt-8 block md:hidden text-center"
         >
-          View All News →
+          All coverage →
         </Link>
       </div>
     </section>

@@ -93,8 +93,8 @@ const Category = () => {
               <ChevronLeft className="w-4 h-4" />
               Back to Home
             </Link>
-            <Badge className="bg-crimson text-white border-none mb-4">Category</Badge>
-            <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-3">{category.name}</h1>
+            <p className="section-kicker text-crimson-light">Section</p>
+            <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold mb-3">{category.name}</h1>
             {category.description ? (
               <p className="text-primary-foreground/80 max-w-3xl text-lg leading-relaxed">{category.description}</p>
             ) : (
@@ -116,7 +116,7 @@ const Category = () => {
                 <Link
                   key={article.id}
                   to={`/articles/${article.slug}`}
-                  className="group flex flex-col sm:flex-row gap-4 p-4 rounded-xl bg-card border border-border hover:border-crimson/30 hover:shadow-hover transition-all overflow-hidden"
+                  className="group flex flex-col sm:flex-row gap-4 p-4 bg-card border border-border hover:border-foreground/25 transition-colors overflow-hidden"
                 >
                   <div className="sm:w-44 shrink-0 aspect-video sm:aspect-[4/3] rounded-lg overflow-hidden bg-muted">
                     <img
