@@ -11,6 +11,7 @@ import Blogs from "./pages/Blogs";
 import Articles from "./pages/Articles";
 import NotFound from "./pages/NotFound";
 import Hello from "./pages/Hello";
+import Newsletter from "./pages/Newsletter";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/articles/:slug" element={<Post />} />
           <Route path="/categories/:slug" element={<Category />} />
           <Route path="/about" element={<About />} />
+          <Route path="/newsletters/:slug" element={<Newsletter />} />
           <Route path="/hello" element={<Hello />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

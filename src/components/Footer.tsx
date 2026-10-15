@@ -7,7 +7,7 @@ const Footer = () => {
     content: [
       { label: "Blogs", href: "/blogs" },
       { label: "Articles", href: "/articles" },
-      { label: "Newsletters", href: "/newsletters" },
+      { label: "Newsletters", href: "/#dispatch" },
     ],
     company: [
       { label: "About Us", href: "/about" },
